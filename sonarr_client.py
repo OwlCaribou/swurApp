@@ -1,6 +1,6 @@
 import http.client
 import urllib.parse
-import json as json_lib
+import json
 from http.client import HTTPResponse
 
 
@@ -32,7 +32,7 @@ class SonarrClient:
         headers = self.headers if self.headers else {}
 
         if json is not None:
-            body = json_lib.dumps(json)
+            body = json.dumps(json)
 
         headers['Content-Type'] = 'application/json'
 
