@@ -33,8 +33,8 @@ Then, when Sonarr checks which episodes to grab, the newly-monitored episodes wi
     - If you want to use crontab, run `crontab -e` and add an entry for the script. For example, to run it every hour at the top of the hour:
         - `0 * * * * /usr/bin/env python3 /path/to/swurApp/swur.py --api-key YOUR_API_KEY --base-url http://sonarr.example.com`
     - OR you can build and run it via Docker:
-      - `docker build -t swurapp .`
-      - `docker run -d --name swurapp -e API_KEY="YOUR_API_KEY" -e BASE_URL="http://sonarr.example.com" -e DELAY=1h swurapp`
+      - `docker build -t swurApp .`
+      - `docker run -d --name swurApp -e API_KEY="YOUR_API_KEY" -e BASE_URL="http://sonarr.example.com" -e DELAY=1h swurApp`
 
 ## Parameters
 
