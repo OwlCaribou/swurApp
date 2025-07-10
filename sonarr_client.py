@@ -32,7 +32,7 @@ class SonarrClient:
         headers = self.headers if self.headers else {}
 
         if json_data is not None:
-            body = json_data.dumps(json)
+            body = json.dumps(json_data)
 
         headers['Content-Type'] = 'application/json'
 
