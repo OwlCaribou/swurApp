@@ -5,8 +5,6 @@ This prevents downloading malicious or fake content that is often seeded to torr
 
 Essentially it's a workaround for https://github.com/Sonarr/Sonarr/issues/969 .
 
-_Note_: The current features in Sonarr allow for delaying
-
 ## How It Works
 
 swurApp connects to the Sonarr API and unmonitors all episodes that haven't aired yet. It also checks for any episodes that _have_ aired, and switches them to monitored.
