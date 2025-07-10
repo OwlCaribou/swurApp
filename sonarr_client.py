@@ -12,7 +12,7 @@ class SonarrClient:
         self.api_key = api_key
         self.headers = {"Content-Type": "application/json"}
 
-    def call_endpoint(self, http_method: str, endpoint: str, params=None, json=None) -> HTTPResponse:
+    def call_endpoint(self, http_method: str, endpoint: str, params=None, json_data=None) -> HTTPResponse:
         if params is None:
             params = {}
 
@@ -31,8 +31,8 @@ class SonarrClient:
         body = None
         headers = self.headers if self.headers else {}
 
-        if json is not None:
-            body = json.dumps(json)
+        if json_data is not None:
+            body = json_data.dumps(json)
 
         headers['Content-Type'] = 'application/json'
 

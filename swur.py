@@ -65,7 +65,7 @@ class swurApp:
             if not latest_season["monitored"]:
                 continue
 
-            self.logger.debug(f"Tracking series {series["title"]} with id: {series["id"]}")
+            self.logger.debug(f"Tracking series {series['title']} with id: {series['id']}")
 
             tracked.append(TrackedSeries(
                 id=series["id"],
@@ -100,7 +100,7 @@ class swurApp:
     def monitor_episodes(self, episode_ids: List[int], should_monitor: bool) -> None:
         self.logger.info(f"Setting monitor={should_monitor} for episode ids: {episode_ids}")
 
-        response = self.sonarr_client.call_endpoint("PUT", "/episode/monitor", json={"episodeIds": episode_ids, "monitored": should_monitor})
+        response = self.sonarr_client.call_endpoint("PUT", "/episode/monitor", json_data={"episodeIds": episode_ids, "monitored": should_monitor})
 
         if not (200 <= response.status < 300):
             raise Exception(f"API call failed with status {response.status}")
@@ -120,7 +120,7 @@ class swurApp:
         episodes = []
 
         for episode in json.loads(response.read().decode()):
-            self.logger.debug(f"Found episode: {episode["id"]}")
+            self.logger.debug(f"Found episode: {episode['id']}")
 
             # airDateUtc is not always present. If this is the case, skip the episode and leave it as-is down the line
             air_date = episode.get("airDateUtc")
