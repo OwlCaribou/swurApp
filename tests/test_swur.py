@@ -176,7 +176,7 @@ def test_monitor_episodes_calls_endpoint_and_logs(app):
     app.sonarr_client.call_endpoint.assert_called_with(
         "PUT",
         "/episode/monitor",
-        json={"episodeIds": [101, 102], "monitored": True}
+        json_data={"episodeIds": [101, 102], "monitored": True}
     )
 
 def test_monitor_episodes_raises_on_failure(app):
