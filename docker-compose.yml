@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  swurApp:
+    image: owlcaribou/swurapp:latest
+    environment:
+      # Required
+      - API_KEY=
+      - BASE_URL=
+      - IGNORE_TAG_NAME=ignore
+      - DELAY_IN_MINUTES=60
+      # Optional, but highly recommended
+      #- PUID=
+      #- PGID=
+      #- TZ= # From IANA TZ database (see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List )
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
