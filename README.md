@@ -1,14 +1,15 @@
 # swurApp
 
-swurApp (Sonarr Watch Until Release App\[lication]) is a simple python program that unmonitors episodes in Sonarr until they have actually aired.
+swurApp is a simple python program that unmonitors episodes in Sonarr until they have actually aired.
 This prevents downloading malicious or fake content that is often seeded to torrent sites before the episode has actually released.
 
-Essentially it's a workaround for https://github.com/Sonarr/Sonarr/issues/969 .
+It's a workaround for https://github.com/Sonarr/Sonarr/issues/969 
+
+The silly acronym stands for Sonarr Watch Until Release App\[lication].
 
 ## How It Works
 
 swurApp connects to the Sonarr API and unmonitors all episodes that haven't aired yet. It also checks for any episodes that _have_ aired, and switches them to monitored.
-
 Then, when Sonarr checks which episodes to grab, the newly-monitored episodes will be picked up, ensuring you don't grab them before air date.
 
 ## Prerequisites
@@ -19,12 +20,12 @@ Then, when Sonarr checks which episodes to grab, the newly-monitored episodes wi
   - python3 and git
 
 ## Installation
-- (Recommended) Tag series you don't want to track with the "`ignore`" tag. Use this for series that air early, or for series that you don't want to grab all aired episodes.
+- (Recommended) Tag series you don't want to track with the "`ignore`" tag. Use this for series that air early, or series that you don't want to grab all aired episodes for.
 - Get an API key from Sonarr:
     - Click "Settings" on the left menu
     - Click "General" on the left menu bar
     - Scroll to "API Key" and copy that value for the `--api-key` parameter
-- Pick one of the follow installation methods:
+- Pick one of the follow installation methods from below:
 
 ### Docker
 ```
@@ -42,9 +43,8 @@ docker run -d \
 
 ### Python and cron
 - Clone this repo: `git clone https://github.com/OwlCaribou/swurApp`
-- Run swurApp every hour/day/etc. I personally am just calling it with crontab every hour:
-    - If you want to use crontab, run `crontab -e` and add an entry for the script. For example, to run it every hour at the top of the hour:
-        - `0 * * * * /usr/bin/env python3 /path/to/swurApp/swur.py --api-key YOUR_API_KEY --base-url http://sonarr.example.com`
+- Run swurApp every hour/day/etc. For example, to run in crontab every hour at the top of the hour:
+    - `0 * * * * /usr/bin/env python3 /path/to/swurApp/swur.py --api-key YOUR_API_KEY --base-url http://sonarr.example.com`
 - (Recommended) Run `git pull` from the directory you downloaded it to get updates
 
 ## Parameters
@@ -63,10 +63,6 @@ docker run -d \
 - If a monitored series does come out early, and you run swurApp, you won't get that series early. Just toggle those episodes to "monitored", or manually download them to work around this.
 - Monitors all episodes in the season that have passed. That means if you intentionally skipped an episode, it will be picked up again. So this application would not work well for sports programs or talk shows, for example.
 
-## Special Thanks
-
-- u/diedin96 from reddit for contributing the Dockerfile and helping catch some bugs
-
 ## FAQ
 
 ### Q: Are you sure this feature doesn't exist in Sonarr?
@@ -83,6 +79,10 @@ docker run -d \
 ### Q: Why not just contribute this directly to Sonarr?
 
 - I'd love to! But they have rejected the proposal for such a feature: https://github.com/Sonarr/Sonarr/issues/969 . Radarr has this, so it's not because of technical problems that this issue persists.
+
+## Special Thanks
+
+- u/diedin96 from reddit for contributing the Dockerfile and helping catch some bugs
 
 ## Donations
 
