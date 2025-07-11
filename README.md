@@ -5,7 +5,7 @@ This prevents downloading malicious or fake content that is often seeded to torr
 
 It's a workaround for https://github.com/Sonarr/Sonarr/issues/969 
 
-The silly acronym stands for Sonarr Watch Until Release App\[lication].
+The silly acronym stands for "Sonarr Watch Until Release App\[lication]."
 
 ## How It Works
 
@@ -25,7 +25,7 @@ Then, when Sonarr checks which episodes to grab, the newly-monitored episodes wi
     - Click "Settings" on the left menu
     - Click "General" on the left menu bar
     - Scroll to "API Key" and copy that value for the `--api-key` parameter
-- Pick one of the follow installation methods from below:
+- Pick one of the following installation methods:
 
 ### Docker
 ```
@@ -65,18 +65,18 @@ docker run -d \
 
 ## FAQ
 
-### Q: Are you sure this feature doesn't exist in Sonarr?
+#### Q: Are you sure this feature doesn't exist in Sonarr?
 
 - The "Minimum Availability" feature exists only in Radarr, so that's probably what you're thinking of. Sonarr explicitly refused to add this in https://github.com/Sonarr/Sonarr/issues/969
   Delay profiles only delay based on the file age, not the release date. If you set a delay profile to 5 hours and a file comes out a week before air date, Sonarr will grab it after 5 hours anyway. We want to wait 5 hours after air date,
   not 5 hours after the malicious/fake file is created.
   The "Minimum Age" feature has the same problem, and it's for Usenet only, anyway.
 
-### Q: I don't have this problem?
+#### Q: I don't have this problem?
 
 - If you don't use public trackers, you probably haven't run across this.
 
-### Q: Why not just contribute this directly to Sonarr?
+#### Q: Why not just contribute this directly to Sonarr?
 
 - I'd love to! But they have rejected the proposal for such a feature: https://github.com/Sonarr/Sonarr/issues/969 . Radarr has this, so it's not because of technical problems that this issue persists.
 
