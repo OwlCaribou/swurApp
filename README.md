@@ -14,6 +14,18 @@ The silly acronym stands for "Sonarr Wait Until Release App\[lication]."
 swurApp connects to the Sonarr API and unmonitors all episodes that haven't aired yet. At the same time, it checks for any episodes that _have_ aired, and switches them to monitored.
 The next time Sonarr checks which episodes to grab, the newly-monitored episodes will be picked up, and the unmonitored ones will be ignored, ensuring you don't grab them before air date.
 
+<table>
+<tr>
+<td align="center"><b>Before</b><br>
+<img width="50%" alt="Before" src="https://github.com/user-attachments/assets/3b457291-cc5b-449a-9f59-723d7103310b" />
+</td>
+<td align="center"><b>After</b><br>
+<img width="50%" alt="After" src="https://github.com/user-attachments/assets/b2705b67-3e05-4b6b-9c90-211c198d7cea" />
+</td>
+</tr>
+</table>
+
+
 ## Prerequisites
 
 - A Sonarr instance (duh)
@@ -22,6 +34,7 @@ The next time Sonarr checks which episodes to grab, the newly-monitored episodes
   - python3 and git
 
 ## Installation
+
 - (Recommended) Tag series you don't want to track with the "`ignore`" tag. Use this for series that air early, or series that you don't want to grab all aired episodes for. You can also just unmonitor the latest season of shows you don't want to track.
 - Get an API key from Sonarr:
     - Click "Settings" on the left menu
