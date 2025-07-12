@@ -2,8 +2,8 @@
 
 # swurApp
 
-swurApp is a simple python program that unmonitors episodes in Sonarr until they have actually aired.
-This prevents downloading malicious or fake content that is often seeded to torrent sites before the episode has actually released.
+swurApp is a simple Python program that unmonitors episodes in Sonarr until they have actually aired.
+This prevents downloading malicious or fake content that is often seeded to torrent sites before the episode has released.
 
 It's a workaround for https://github.com/Sonarr/Sonarr/issues/969 
 
@@ -11,8 +11,8 @@ The silly acronym stands for "Sonarr Wait Until Release App\[lication]."
 
 ## How It Works
 
-swurApp connects to the Sonarr API and unmonitors all episodes that haven't aired yet. It also checks for any episodes that _have_ aired, and switches them to monitored.
-Then, when Sonarr checks which episodes to grab, the newly-monitored episodes will be picked up, ensuring you don't grab them before air date.
+swurApp connects to the Sonarr API and unmonitors all episodes that haven't aired yet. At the same time, it checks for any episodes that _have_ aired, and switches them to monitored.
+The next time Sonarr checks which episodes to grab, the newly-monitored episodes will be picked up, and the unmonitored ones will be ignored, ensuring you don't grab them before air date.
 
 ## Prerequisites
 
@@ -22,14 +22,14 @@ Then, when Sonarr checks which episodes to grab, the newly-monitored episodes wi
   - python3 and git
 
 ## Installation
-- (Recommended) Tag series you don't want to track with the "`ignore`" tag. Use this for series that air early, or series that you don't want to grab all aired episodes for.
+- (Recommended) Tag series you don't want to track with the "`ignore`" tag. Use this for series that air early, or series that you don't want to grab all aired episodes for. You can also just unmonitor the latest season of shows you don't want to track.
 - Get an API key from Sonarr:
     - Click "Settings" on the left menu
     - Click "General" on the left menu bar
     - Scroll to "API Key" and copy that value for the `--api-key` parameter
 - Pick one of the following installation methods:
 
-### Docker
+### Option 1: Docker
 ```
 docker run -d \
   -e API_KEY="YOUR_API_KEY" \
@@ -40,10 +40,10 @@ docker run -d \
   owlcaribou/swurApp:latest
 ```
 
-### Docker Compose
+### Option 2: Docker Compose
 - Pull or copy the `docker-compose.yml` file from the repository above, and populate at least the required variables (see below).
 
-### Python and cron
+### Option 3: Python and cron
 - Clone this repo: `git clone https://github.com/OwlCaribou/swurApp`
 - Run swurApp every hour/day/etc. For example, to run in crontab every hour at the top of the hour:
     - `0 * * * * /usr/bin/env python3 /path/to/swurApp/swur.py --api-key YOUR_API_KEY --base-url http://sonarr.example.com`
@@ -53,7 +53,7 @@ docker run -d \
 
 | Python Parameter    | Docker Environment Variable | Required | Description                                                                                                                                                          | Default  |
 |---------------------|-----------------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
-| `--api-key`         | API_KEY                     | Yes      | The API key used to authenticate requests with the Sonarr instance. Get this under "Settings" -> "General"                                                           | None     |
+| `--api-key`         | API_KEY                     | Yes      | The API key used to authenticate requests with the Sonarr instance. Get this under "Settings" -> "General" -> "API Key"                                                           | None     |
 | `--base-url`        | BASE_URL                    | Yes      | The full base URL of your Sonarr server, including scheme (`http/https`), host, and port. For example: "`http://192.168.1.1:8989`" or "`https://sonarr.example.com`" | None     |
 | N/A                 | DELAY_IN_MINUTES            | Yes      | How often to monitor and unmonitor episodes                                                                                                                          | 60       |
 | `--ignore-tag-name` | IGNORE_TAG_NAME             | No       | The tag name for series that should not be processed by swurApp                                                                                                      | `ignore` |
@@ -62,8 +62,8 @@ docker run -d \
 ## Limitations
 
 - Only works for the latest season. This should be fine unless a series comes out with a new season very quickly after an old one ends. That's why it's important not to run this script too infrequently.
-- If a monitored series does come out early, and you run swurApp, you won't get that series early. Just toggle those episodes to "monitored", or manually download them to work around this.
-- Monitors all episodes in the season that have passed. That means if you intentionally skipped an episode, it will be picked up again. So this application would not work well for sports programs or talk shows, for example.
+- If a monitored series does come out early, and you run swurApp, you won't get that series early. Just toggle those episodes to "monitored" or manually download them to work around this.
+- Monitors all episodes in the season that have aired. That means if you intentionally skipped an episode, it will be picked up again. So this application would not work well for sports programs or talk shows, for example.
 
 ## FAQ
 
