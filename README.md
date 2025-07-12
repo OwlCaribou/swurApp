@@ -7,7 +7,7 @@ This prevents downloading malicious or fake content that is often seeded to torr
 
 It's a workaround for https://github.com/Sonarr/Sonarr/issues/969 
 
-The silly acronym stands for "Sonarr Watch Until Release App\[lication]."
+The silly acronym stands for "Sonarr Wait Until Release App\[lication]."
 
 ## How It Works
 
