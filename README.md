@@ -1,3 +1,5 @@
+[![Python Tests](https://github.com/OwlCaribou/swurApp/actions/workflows/main.yml/badge.svg)](https://github.com/OwlCaribou/swurApp/actions/workflows/main.yml)
+
 # swurApp
 
 swurApp is a simple python program that unmonitors episodes in Sonarr until they have actually aired.
@@ -67,9 +69,8 @@ docker run -d \
 
 #### Q: Are you sure this feature doesn't exist in Sonarr?
 
-- The "Minimum Availability" feature exists only in Radarr, so that's probably what you're thinking of. Sonarr explicitly refused to add this in https://github.com/Sonarr/Sonarr/issues/969
-  Delay profiles only delay based on the file age, not the release date. If you set a delay profile to 5 hours and a file comes out a week before air date, Sonarr will grab it after 5 hours anyway. We want to wait 5 hours after air date,
-  not 5 hours after the malicious/fake file is created.
+- The "Minimum Availability" feature exists only in Radarr, so that's probably what you're thinking of. Sonarr explicitly refused to add this in https://github.com/Sonarr/Sonarr/issues/969 .
+  Delay profiles only delay based on the file age, not the release date. If you set a delay profile to 5 hours and a file comes out a week before air date, Sonarr will grab the file after 5 hours. We want to wait 5 hours after _air_ date, not 5 hours after the malicious/fake file is created.
   The "Minimum Age" feature has the same problem, and it's for Usenet only, anyway.
 
 #### Q: I don't have this problem?
