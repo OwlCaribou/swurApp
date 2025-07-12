@@ -11,20 +11,19 @@ The silly acronym stands for "Sonarr Wait Until Release App\[lication]."
 
 ## How It Works
 
-swurApp connects to the Sonarr API and unmonitors all episodes that haven't aired yet. At the same time, it checks for any episodes that _have_ aired, and switches them to monitored.
-The next time Sonarr checks which episodes to grab, the newly-monitored episodes will be picked up, and the unmonitored ones will be ignored, ensuring you don't grab them before air date.
+swurApp connects to the Sonarr API and unmonitors all episodes that haven't aired yet. At the same time, it checks for any episodes that _have_ aired and switches them to monitored.
+The next time Sonarr grabs episodes, the newly-monitored episodes will be picked up, and the unmonitored ones will be ignored, ensuring you don't grab any before air date.
 
 <table>
 <tr>
 <td align="center"><b>Before</b><br>
-<img width="50%" alt="Before" src="https://github.com/user-attachments/assets/3b457291-cc5b-449a-9f59-723d7103310b" />
+<img alt="Before" src="https://github.com/user-attachments/assets/3b457291-cc5b-449a-9f59-723d7103310b" />
 </td>
 <td align="center"><b>After</b><br>
-<img width="50%" alt="After" src="https://github.com/user-attachments/assets/b2705b67-3e05-4b6b-9c90-211c198d7cea" />
+<img alt="After" src="https://github.com/user-attachments/assets/b2705b67-3e05-4b6b-9c90-211c198d7cea" />
 </td>
 </tr>
 </table>
-
 
 ## Prerequisites
 
@@ -54,7 +53,7 @@ docker run -d \
 ```
 
 ### Option 2: Docker Compose
-- Pull or copy the `docker-compose.yml` file from the repository above, and populate at least the required variables (see below).
+- Download or copy the `docker-compose.yml` file from the repository and fill in the required variables.
 
 ### Option 3: Python and cron
 - Clone this repo: `git clone https://github.com/OwlCaribou/swurApp`
@@ -75,8 +74,8 @@ docker run -d \
 ## Limitations
 
 - Only works for the latest season. This should be fine unless a series comes out with a new season very quickly after an old one ends. That's why it's important not to run this script too infrequently.
-- If a monitored series does come out early, and you run swurApp, you won't get that series early. Just toggle those episodes to "monitored" or manually download them to work around this.
-- Monitors all episodes in the season that have aired. That means if you intentionally skipped an episode, it will be picked up again. So this application would not work well for sports programs or talk shows, for example.
+- If a monitored series does come out early, and you run swurApp, you won't get those episodes early. Just toggle them to "monitored" or manually download them to work around this.
+- swurApp monitors _all_ episodes in the latest season that have aired. That means if you intentionally skipped an episode, it will be picked up again. So this application would not work well for sports programs or talk shows, for example.
 
 ## FAQ
 
