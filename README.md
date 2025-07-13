@@ -84,6 +84,7 @@ docker run -d \
 - The "Minimum Availability" feature exists only in Radarr, so that's probably what you're thinking of. Sonarr has explicitly refused to add this in https://github.com/Sonarr/Sonarr/issues/969 .
 - Delay profiles only delay based on the file age, not the episode air date. If you set a delay profile to 5 hours and a file comes out a week before air date, Sonarr will grab the file after 5 hours. We want to wait 5 hours after _air_ date, not 5 hours after the malicious/fake file is seeded.
 - The "Minimum Age" feature has the same problem. Plus it's for Usenet only, anyway.
+- The "Fail Downloads" option helps, but doesn't work if the file is intentionally mislabelled (ie because it is still a video file, just the wrong one), as opposed to malware.
 
 #### Q: I don't have this problem?
 
