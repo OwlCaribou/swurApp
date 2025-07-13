@@ -2,13 +2,13 @@ import swur
 import pytest
 import json
 from unittest.mock import MagicMock
-from swur import swurApp
+from swur import SwurApp
 from datetime import datetime, timedelta, timezone
 
 @pytest.fixture
 def app():
     mock_client = MagicMock()
-    app = swurApp(api_key="abcd123", base_url="http://localhost:8989", tag_name="swur")
+    app = SwurApp(api_key="abcd123", base_url="http://localhost:8989", tag_name="swur")
     app.sonarr_client = mock_client
     app.logger = MagicMock()
     return app

@@ -25,7 +25,7 @@ class Episode:
     is_monitored: bool
 
 
-class swurApp:
+class SwurApp:
     def __init__(self, api_key, base_url, tag_name):
         self.logger = logging.getLogger(__name__)
         self.sonarr_client = SonarrClient(base_url, api_key)
@@ -142,5 +142,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    app = swurApp(args.api_key, args.base_url, args.ignore_tag_name)
+    app = SwurApp(args.api_key, args.base_url, args.ignore_tag_name)
     app.run()

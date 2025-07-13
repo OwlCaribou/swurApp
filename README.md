@@ -18,10 +18,10 @@ The next time Sonarr grabs episodes, the newly-monitored episodes will be picked
 
 <table>
 <tr>
-<td align="center"><b>Before</b><br>
+<td style="text-align: center;"><b>Before</b><br>
 <img alt="Before" src="https://github.com/user-attachments/assets/3b457291-cc5b-449a-9f59-723d7103310b" />
 </td>
-<td align="center"><b>After</b><br>
+<td style="text-align: center;"><b>After</b><br>
 <img alt="After" src="https://github.com/user-attachments/assets/b2705b67-3e05-4b6b-9c90-211c198d7cea" />
 </td>
 </tr>
@@ -67,7 +67,7 @@ docker run -d \
 
 | Python Parameter    | Docker Environment Variable | Required | Description                                                                                                                                                          | Default  |
 |---------------------|-----------------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
-| `--api-key`         | API_KEY                     | Yes      | The API key used to authenticate requests with the Sonarr instance. Get this under "Settings" -> "General" -> "API Key"                                                           | None     |
+| `--api-key`         | API_KEY                     | Yes      | The API key used to authenticate requests with the Sonarr instance. Get this under "Settings" -> "General" -> "API Key"                                              | None     |
 | `--base-url`        | BASE_URL                    | Yes      | The full base URL of your Sonarr server, including scheme (`http/https`), host, and port. For example: "`http://192.168.1.1:8989`" or "`https://sonarr.example.com`" | None     |
 | N/A                 | DELAY_IN_MINUTES            | Yes      | How often to monitor and unmonitor episodes                                                                                                                          | 60       |
 | `--ignore-tag-name` | IGNORE_TAG_NAME             | No       | The tag name for series that should not be processed by swurApp                                                                                                      | `ignore` |
