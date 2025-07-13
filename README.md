@@ -1,4 +1,6 @@
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/OwlCaribou/swurApp/blob/main/LICENSE)
 [![Python Tests](https://github.com/OwlCaribou/swurApp/actions/workflows/main.yml/badge.svg)](https://github.com/OwlCaribou/swurApp/actions/workflows/main.yml)
+![GitHub Stars](https://img.shields.io/github/stars/OwlCaribou/swurApp?style=social)
 
 # swurApp
 
@@ -53,10 +55,10 @@ docker run -d \
 ```
 
 ### Option 2: Docker Compose
-- Download or copy the `docker-compose.yml` file from the repository and fill in the required variables.
+- Download or copy the [docker-compose.yml](https://github.com/OwlCaribou/swurApp/blob/main/docker-compose.yml) file from the repository and fill in the required variables.
 
 ### Option 3: Python and cron
-- Clone this repo: `git clone https://github.com/OwlCaribou/swurApp`
+- Clone this repo ( `git clone https://github.com/OwlCaribou/swurApp` )
 - Run swurApp every hour/day/etc. For example, to run in crontab every hour at the top of the hour:
     - `0 * * * * /usr/bin/env python3 /path/to/swurApp/swur.py --api-key YOUR_API_KEY --base-url http://sonarr.example.com`
 - (Recommended) Run `git pull` from the directory you downloaded it to get updates
