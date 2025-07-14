@@ -49,6 +49,6 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: davidemerli/swurapp:latest
+          tags: owlcaribou/swurapp:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
