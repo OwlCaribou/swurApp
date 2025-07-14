@@ -1,6 +1,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/OwlCaribou/swurApp/blob/main/LICENSE)
 [![Python Tests](https://github.com/OwlCaribou/swurApp/actions/workflows/tests.yml/badge.svg)](https://github.com/OwlCaribou/swurApp/actions/workflows/tests.yml)
 ![GitHub Stars](https://img.shields.io/github/stars/OwlCaribou/swurApp?style=social)
+![Docker Pulls](https://img.shields.io/docker/pulls/owlcaribou/swurapp)
 
 # swurApp
 
