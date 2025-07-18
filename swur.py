@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 @dataclass
-class TrackedSeries:
+class Series:
     id: int
     latest_season: int
 
@@ -23,6 +23,7 @@ class Episode:
     id: int
     has_aired: bool
     is_monitored: bool
+    title: str
 
 
 class SwurApp:
@@ -39,16 +40,14 @@ class SwurApp:
     def get_tag_id(self) -> int:
         response = self.sonarr_client.call_endpoint("GET", "/tag")
 
-        tracked_tag_id = next((item["id"] for item in json.loads(response.read().decode()) if item["label"] == self.tag_name), None)
+        ignored_tag_id = next((item["id"] for item in json.loads(response.read().decode()) if item["label"] == self.tag_name), None)
 
-        if tracked_tag_id is None:
+        if ignored_tag_id is None:
             self.logger.info(f"Could not find a tag with label \"{self.tag_name}\". Tracking all series.")
-        else:
-            self.logger.info(f"Tag \"{self.tag_name}\" found with id \"{tracked_tag_id}\"")
 
-        return tracked_tag_id
+        return ignored_tag_id
 
-    def get_tracked_series_ids(self, ignore_tag_id: int) -> List[TrackedSeries]:
+    def get_tracked_series_ids(self, ignore_tag_id: int) -> List[Series]:
         response = self.sonarr_client.call_endpoint("GET", "/series")
         tracked = []
 
@@ -67,14 +66,14 @@ class SwurApp:
 
             self.logger.debug(f"Tracking series {series['title']} with id: {series['id']}")
 
-            tracked.append(TrackedSeries(
+            tracked.append(Series(
                 id=series["id"],
                 latest_season=latest_season["seasonNumber"])
             )
 
         return tracked
 
-    def track_episodes(self, tracked_series_ids: List[TrackedSeries]) -> None:
+    def track_episodes(self, tracked_series_ids: List[Series]) -> None:
         episodes_to_monitor = []
         episodes_to_unmonitor = []
 
@@ -83,9 +82,9 @@ class SwurApp:
 
             for episode in episodes:
                 if episode.has_aired and not episode.is_monitored:
-                    episodes_to_monitor.append(episode.id)
+                    episodes_to_monitor.append(episode)
                 elif not episode.has_aired and episode.is_monitored:
-                    episodes_to_unmonitor.append(episode.id)
+                    episodes_to_unmonitor.append(episode)
 
         # Monitor and unmonitor the episodes in bulk to reduce our API calls
         if episodes_to_monitor:
@@ -97,8 +96,10 @@ class SwurApp:
         if not episodes_to_unmonitor and not episodes_to_monitor:
             self.logger.info("No new episodes to un/monitor")
 
-    def monitor_episodes(self, episode_ids: List[int], should_monitor: bool) -> None:
-        self.logger.info(f"Setting monitor={should_monitor} for episode ids: {episode_ids}")
+    def monitor_episodes(self, episodes: List[Episode], should_monitor: bool) -> None:
+        episode_ids = [episode.id for episode in episodes]
+        episode_titles = [episode.title for episode in episodes]
+        self.logger.info(f"Setting monitor={should_monitor} for episodes: {episode_titles}")
 
         response = self.sonarr_client.call_endpoint("PUT", "/episode/monitor", json_data={"episodeIds": episode_ids, "monitored": should_monitor})
 
@@ -124,9 +125,11 @@ class SwurApp:
 
             # airDateUtc is not always present. If this is the case, skip the episode and leave it as-is down the line
             air_date = episode.get("airDateUtc")
+
             if air_date is not None:
                 episodes.append(Episode(
                     id=episode["id"],
+                    title=episode["title"],
                     has_aired=datetime.strptime(episode["airDateUtc"], AIR_DATE_FORMAT).replace(tzinfo=timezone.utc) < now,
                     is_monitored=episode["monitored"],
                 ))
