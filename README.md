@@ -19,11 +19,14 @@ The next time Sonarr grabs episodes, the newly-monitored episodes will be picked
 
 <table>
 <tr>
-<td style="text-align: center;"><b>Before</b><br>
-<img alt="Before" src="https://github.com/user-attachments/assets/3b457291-cc5b-449a-9f59-723d7103310b" />
+<td style="text-align: center;" width="33%"><b>Before</b><br>
+  <img alt="Before" src="https://github.com/user-attachments/assets/3b457291-cc5b-449a-9f59-723d7103310b" />
 </td>
-<td style="text-align: center;"><b>After</b><br>
-<img alt="After" src="https://github.com/user-attachments/assets/b2705b67-3e05-4b6b-9c90-211c198d7cea" />
+<td style="text-align: center;" width="33%"><b>After</b><br>
+  <img alt="After" src="https://github.com/user-attachments/assets/b2705b67-3e05-4b6b-9c90-211c198d7cea" />
+</td>
+<td style="text-align: center;" width="33%"><b>Then</b><br>
+  <img alt="Then" src="https://github.com/user-attachments/assets/3cc1c8c0-54f3-4b31-a156-d5128ae936a3" />
 </td>
 </tr>
 </table>
