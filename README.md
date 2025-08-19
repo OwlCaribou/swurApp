@@ -9,6 +9,7 @@ swurApp is a simple Python program that unmonitors episodes in Sonarr until they
 This prevents downloading malicious or fake content that is often seeded to torrent sites before the episode has released.
 
 It's a workaround for https://github.com/Sonarr/Sonarr/issues/969 
+_Note_: A week after the release of this project, the Sonarr team changed the status of that ticket to open and said it would be fixed in V5! I will happily archive this repo when that happens.
 
 The silly acronym stands for "Sonarr Wait Until Release App\[lication]."
 
