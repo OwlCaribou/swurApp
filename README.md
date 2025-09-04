@@ -109,4 +109,4 @@ docker run -d \
 
 If you would like to donate, feel free to send a satoshi or two to:
 
-**Bitcoin Address:** `bc1qac6z60typvrfzjuyfr9m3v7lj938uh508k38y6`
+**Bitcoin Address:** `bc1q65zl6qsk76qxr46hk9ehvl90ha8hapz8zphec2`
