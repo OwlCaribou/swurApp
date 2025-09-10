@@ -66,12 +66,12 @@ docker run -d \
 
 ## Parameters
 
-| Python Parameter    | Docker Environment Variable | Required | Description                                                                                                                                                          | Default  |
-|---------------------|-----------------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
-| `--api-key`         | API_KEY                     | Yes      | The API key used to authenticate requests with the Sonarr instance. Get this under "Settings" -> "General" -> "API Key"                                              | None     |
-| `--base-url`        | BASE_URL                    | Yes      | The full base URL of your Sonarr server, including scheme (`http/https`), host, and port. For example: "`http://192.168.1.1:8989`" or "`https://sonarr.example.com`" | None     |
-| N/A                 | DELAY_IN_MINUTES            | Yes      | How often to monitor and unmonitor episodes                                                                                                                          | 60       |
-| `--ignore-tag-name` | IGNORE_TAG_NAME             | No       | The tag name for series that should not be processed by swurApp                                                                                                      | `ignore` |
+| Python Parameter    | Docker Environment Variable | Required | Description                                                                                                                                                                                        | Default  |
+|---------------------|-----------------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+| `--api-key`         | API_KEY                     | Yes      | The API key used to authenticate requests with the Sonarr instance. Get this under "Settings" -> "General" -> "API Key"                                                                            | None     |
+| `--base-url`        | BASE_URL                    | Yes      | The full base URL of your Sonarr server, including scheme (`http/https`), host, and port, but without a trailing slash. For example: "`http://192.168.1.1:8989`" or "`https://sonarr.example.com`" | None     |
+| N/A                 | DELAY_IN_MINUTES            | Yes      | How often to monitor and unmonitor episodes                                                                                                                                                        | 60       |
+| `--ignore-tag-name` | IGNORE_TAG_NAME             | No       | The tag name for series that should not be processed by swurApp                                                                                                                                    | `ignore` |
 
 
 ## Limitations
