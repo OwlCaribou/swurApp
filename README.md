@@ -9,6 +9,7 @@ swurApp is a simple Python program that unmonitors episodes in Sonarr until they
 This prevents downloading malicious or fake content that is often seeded to torrent sites before the episode has released.
 
 It's a workaround for https://github.com/Sonarr/Sonarr/issues/969 
+_Note_: A week after the release of this project, the Sonarr team changed the status of that ticket to open and said it would be fixed in V5! I will happily archive this repo when that happens.
 
 The silly acronym stands for "Sonarr Wait Until Release App\[lication]."
 
@@ -19,11 +20,14 @@ The next time Sonarr grabs episodes, the newly-monitored episodes will be picked
 
 <table>
 <tr>
-<td style="text-align: center;"><b>Before</b><br>
-<img alt="Before" src="https://github.com/user-attachments/assets/3b457291-cc5b-449a-9f59-723d7103310b" />
+<td style="text-align: center;" width="33%"><b>Before</b><br>
+  <img alt="Before" src="https://github.com/user-attachments/assets/3b457291-cc5b-449a-9f59-723d7103310b" />
 </td>
-<td style="text-align: center;"><b>After</b><br>
-<img alt="After" src="https://github.com/user-attachments/assets/b2705b67-3e05-4b6b-9c90-211c198d7cea" />
+<td style="text-align: center;" width="33%"><b>After</b><br>
+  <img alt="After" src="https://github.com/user-attachments/assets/b2705b67-3e05-4b6b-9c90-211c198d7cea" />
+</td>
+<td style="text-align: center;" width="33%"><b>Then</b><br>
+  <img alt="Then" src="https://github.com/user-attachments/assets/3cc1c8c0-54f3-4b31-a156-d5128ae936a3" />
 </td>
 </tr>
 </table>
@@ -105,4 +109,4 @@ docker run -d \
 
 If you would like to donate, feel free to send a satoshi or two to:
 
-**Bitcoin Address:** `bc1qac6z60typvrfzjuyfr9m3v7lj938uh508k38y6`
+**Bitcoin Address:** `bc1q65zl6qsk76qxr46hk9ehvl90ha8hapz8zphec2`
