@@ -1,0 +1,23 @@
+name: Promote to latest
+
+on:
+  workflow_dispatch:
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull dev image
+        run: docker pull owlcaribou/swurapp:dev
+
+      - name: Tag as latest
+        run: docker tag owlcaribou/swurapp:dev owlcaribou/swurapp:latest
+
+      - name: Push latest
+        run: docker push owlcaribou/swurapp:latest
