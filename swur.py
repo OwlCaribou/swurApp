@@ -4,12 +4,11 @@ from typing import List
 from datetime import datetime, timezone
 import logging
 import json
+import os
 
 from sonarr_client import SonarrClient
 
 AIR_DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
-
-logging.basicConfig(level=logging.INFO)
 
 
 @dataclass
@@ -99,6 +98,7 @@ class SwurApp:
     def monitor_episodes(self, episodes: List[Episode], should_monitor: bool) -> None:
         episode_ids = [episode.id for episode in episodes]
         episode_titles = [episode.title for episode in episodes]
+
         self.logger.info(f"Setting monitor={should_monitor} for episodes: {episode_titles}")
 
         response = self.sonarr_client.call_endpoint("PUT", "/episode/monitor", json_data={"episodeIds": episode_ids, "monitored": should_monitor})
@@ -137,13 +137,21 @@ class SwurApp:
         return episodes
 
 
+def _resolve_log_level(cli_value: str | None) -> int:
+    name = (cli_value or os.getenv("LOG_LEVEL", "INFO")).upper()
+    return getattr(logging, name, logging.INFO)
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--api-key", required=True, help="(Required) The API key for the Sonarr instance")
     parser.add_argument("--base-url", required=True, help="(Required) The base URL (scheme, host, and port) for the Sonarr instance")
     parser.add_argument("--ignore-tag-name", help="(Optional) The name of the tag for series that swurApp should NOT track. \"ignore\" by default.", default="ignore")
+    parser.add_argument("--log-level", help="(Optional) Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL")
 
     args = parser.parse_args()
 
+    logging.basicConfig(level=_resolve_log_level(args.log_level))
     app = SwurApp(args.api_key, args.base_url, args.ignore_tag_name)
     app.run()

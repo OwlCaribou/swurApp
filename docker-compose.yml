@@ -7,6 +7,8 @@ services:
       - BASE_URL=
       - IGNORE_TAG_NAME=ignore
       - DELAY_IN_MINUTES=60
+      # Optional
+      #- LOG_LEVEL=INFO
       # Optional, but highly recommended
       #- PUID=
       #- PGID=

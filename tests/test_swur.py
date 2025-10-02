@@ -179,6 +179,7 @@ def test_monitor_episodes_calls_endpoint_and_logs(app):
         "/episode/monitor",
         json_data={"episodeIds": [101, 102], "monitored": True}
     )
+    app.logger.info.assert_called_with("Setting monitor=True for episodes: ['Episode 101', 'Episode 102']")
 
 def test_monitor_episodes_raises_on_failure(app):
     mock_episodes = [
@@ -196,12 +197,9 @@ def test_monitor_episodes_raises_on_failure(app):
 
     assert "API call failed with status 500" == str(ex.value)
 
-def test_get_episodes_for_series_returns_correct_episode_objects(app):
-    mock_episodes = [
-        MagicMock(id=101, title="Episode 101", has_aired=True, is_monitored=True),
-        MagicMock(id=102, title="Episode 102", has_aired=False, is_monitored=False),
-    ]
+    app.logger.info.assert_called_with("Setting monitor=False for episodes: ['Episode 101', 'Episode 102']")
 
+def test_get_episodes_for_series_returns_correct_episode_objects(app):
     now = datetime.now(timezone.utc)
     past_date = (now - timedelta(days=1)).strftime(swur.AIR_DATE_FORMAT)
     future_date = (now + timedelta(days=1)).strftime(swur.AIR_DATE_FORMAT)
@@ -234,6 +232,8 @@ def test_get_episodes_for_series_returns_correct_episode_objects(app):
     assert episodes[1].has_aired is False
     assert episodes[1].is_monitored is False
     assert episodes[1].title == 'Episode 102'
+
+    app.logger.info.assert_not_called()
 
 def test_get_episodes_for_series_raises_on_failure(app):
     mock_response = MagicMock()
