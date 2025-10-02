@@ -1,4 +1,4 @@
-name: Promote to latest
+name: Promote to Latest
 
 on:
   workflow_dispatch:
