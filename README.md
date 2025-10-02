@@ -56,7 +56,7 @@ docker run -d \
   -e DELAY_IN_MINUTES=60 \
   -e IGNORE_TAG_NAME="ignore" \
   --restart unless-stopped \
-  owlcaribou/swurApp:latest
+  docker.io/owlcaribou/swurapp:latest
 ```
 
 ### Option 2: Docker Compose
