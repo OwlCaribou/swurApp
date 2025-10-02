@@ -121,7 +121,7 @@ class SwurApp:
         episodes = []
 
         for episode in json.loads(response.read().decode()):
-            self.logger.debug(f"Found episode: {episode['id']}")
+            self.logger.debug(f"Found episode: {episode['title']}")
 
             # airDateUtc is not always present. If this is the case, skip the episode and leave it as-is down the line
             air_date = episode.get("airDateUtc")
