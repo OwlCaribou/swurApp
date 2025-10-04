@@ -42,4 +42,4 @@ class SonarrClient:
         if 200 <= response.status < 300:
             return response
         else:
-            raise Exception(f"API call failed with status {response.status}")
+            raise Exception(f"API call failed with status: {response.status}, content: {response.read()}")

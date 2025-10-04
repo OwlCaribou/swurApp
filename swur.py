@@ -101,10 +101,7 @@ class SwurApp:
 
         self.logger.info(f"Setting monitor={should_monitor} for episodes: {episode_titles}")
 
-        response = self.sonarr_client.call_endpoint("PUT", "/episode/monitor", json_data={"episodeIds": episode_ids, "monitored": should_monitor})
-
-        if not (200 <= response.status < 300):
-            raise Exception(f"API call failed with status {response.status}")
+        self.sonarr_client.call_endpoint("PUT", "/episode/monitor", json_data={"episodeIds": episode_ids, "monitored": should_monitor})
 
     def get_episodes_for_series(self, series_id: int, season: int) -> List[Episode]:
         params = {
@@ -113,9 +110,6 @@ class SwurApp:
         }
 
         response = self.sonarr_client.call_endpoint("GET", "/episode", params=params)
-
-        if not (200 <= response.status < 300):
-            raise Exception(f"API call failed with status {response.status}")
 
         now = datetime.now(timezone.utc)
         episodes = []
@@ -140,7 +134,6 @@ class SwurApp:
 def _resolve_log_level(cli_value: str | None) -> int:
     name = (cli_value or os.getenv("LOG_LEVEL", "INFO")).upper()
     return getattr(logging, name, logging.INFO)
-
 
 
 if __name__ == "__main__":

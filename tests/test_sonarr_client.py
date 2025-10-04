@@ -36,4 +36,5 @@ def test_call_endpoint_failure(mock_https_conn, client):
 
     with pytest.raises(Exception) as excinfo:
         client.call_endpoint("POST", "/fail-endpoint")
-    assert "API call failed with status 404" in str(excinfo.value)
+
+    assert "API call failed with status: 404" in str(excinfo.value)
