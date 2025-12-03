@@ -106,9 +106,3 @@ docker run -d \
 ## Special Thanks
 
 - u/diedin96 from reddit for contributing the Dockerfile and helping catch some bugs
-
-## Donations
-
-If you would like to donate, feel free to send a satoshi or two to:
-
-**Bitcoin Address:** `bc1q65zl6qsk76qxr46hk9ehvl90ha8hapz8zphec2`
