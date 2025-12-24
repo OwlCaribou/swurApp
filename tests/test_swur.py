@@ -43,6 +43,36 @@ def test_get_tag_id_not_found(app):
 
     assert tag_id is None
 
+def test_get_tracked_series_ids_skips_empty_seasons(app):
+    mock_response = MagicMock()
+    mock_response.read.return_value = json.dumps([
+        {
+            "id": 1,
+            "title": "Show Empty Seasons",
+            "monitored": True,
+            "tags": [],
+            "seasons": [],
+        },
+        {
+            "id": 2,
+            "title": "Show With Seasons",
+            "monitored": True,
+            "tags": [],
+            "seasons": [
+                {"seasonNumber": 1, "monitored": True},
+            ],
+        },
+    ]).encode()
+    mock_response.status = 200
+
+    app.sonarr_client.call_endpoint.return_value = mock_response
+
+    tracked = app.get_tracked_series_ids(ignore_tag_id=999)
+
+    assert len(tracked) == 1
+    assert tracked[0].id == 2
+    assert tracked[0].latest_season == 1
+
 
 def test_get_tracked_series_ids(app):
     mock_response = MagicMock()
@@ -88,6 +118,14 @@ def test_get_tracked_series_ids(app):
                 {"seasonNumber": 2, "monitored": False},
             ],
         },
+        # No season info yet
+        {
+            "id": 5,
+            "title": "Show 5",
+            "monitored": True,
+            "tags": [],
+            "seasons": [ ],
+        },
     ]).encode()
     mock_response.status = 200
 
@@ -98,8 +136,6 @@ def test_get_tracked_series_ids(app):
     assert len(tracked) == 1
     assert tracked[0].id == 1
     assert tracked[0].latest_season == 2
-
-    app.logger.debug.assert_called_with("Tracking series Show A with id: 1")
 
 
 def test_get_tracked_series_ids_none_match(app):

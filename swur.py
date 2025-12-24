@@ -51,11 +51,17 @@ class SwurApp:
         tracked = []
 
         for series in json.loads(response.read().decode()):
+            self.logger.debug(f"Checking series \"{series['title']}\".")
+
             # Only consider shows that are monitored and not tagged, with the latest season being monitored as well
             if not series["monitored"]:
                 continue
 
             if ignore_tag_id in series["tags"]:
+                continue
+
+            # The show has been announced, but no info yet
+            if not series["seasons"]:
                 continue
 
             latest_season = max(series["seasons"], key=lambda season: season["seasonNumber"])
