@@ -94,15 +94,14 @@ class SwurApp:
         # Monitor and unmonitor the episodes in bulk to reduce our API calls
         if episodes_to_monitor:
             self.monitor_episodes(episodes_to_monitor, True)
+            episode_ids = [episode.id for episode in episodes_to_monitor]
+            self._search_for_episodes(episode_ids)
 
         if episodes_to_unmonitor:
             self.monitor_episodes(episodes_to_unmonitor, False)
 
         if not episodes_to_unmonitor and not episodes_to_monitor:
             self.logger.info("No new episodes to un/monitor")
-            return
-
-        self._trigger_missing_episode_search()
 
     def monitor_episodes(self, episodes: List[Episode], should_monitor: bool) -> None:
         episode_ids = [episode.id for episode in episodes]
@@ -139,9 +138,10 @@ class SwurApp:
 
         return episodes
 
-    def _trigger_missing_episode_search(self) -> None:
-        self.logger.info("Triggering search")
-        self.sonarr_client.call_endpoint("POST", "/command", json_data={"name": "MissingEpisodeSearch"})
+    def _search_for_episodes(self, episode_ids: List[int]) -> None:
+        self.logger.info(f"Triggering episode search for {len(episode_ids)} episodes")
+
+        self.sonarr_client.call_endpoint("POST", "/command", json_data={"name": "EpisodeSearch", "episodeIds": episode_ids})
 
 
 def _resolve_log_level(cli_value: str | None) -> int:

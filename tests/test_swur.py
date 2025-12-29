@@ -186,7 +186,7 @@ def test_track_episodes(app, monkeypatch):
     app.sonarr_client.call_endpoint.assert_called_with(
         "POST",
         "/command",
-        json_data={"name": "MissingEpisodeSearch"}
+        json_data={"name": "EpisodeSearch", "episodeIds": [101]}
     )
 
 
