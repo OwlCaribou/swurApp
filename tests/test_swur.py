@@ -11,7 +11,6 @@ def app():
     mock_client = MagicMock()
     app = SwurApp(api_key="abcd123", base_url="http://localhost:8989", tag_name="ignore")
     app.sonarr_client = mock_client
-    app.logger = MagicMock()
     return app
 
 
@@ -184,7 +183,11 @@ def test_track_episodes(app, monkeypatch):
     app.get_episodes_for_series.assert_called_once_with(1, 2)
     app.monitor_episodes.assert_any_call([mock_episodes[0]], True)
     app.monitor_episodes.assert_any_call([mock_episodes[1]], False)
-    app.logger.info.assert_not_called()
+    app.sonarr_client.call_endpoint.assert_called_with(
+        "POST",
+        "/command",
+        json_data={"name": "MissingEpisodeSearch"}
+    )
 
 
 def test_track_episodes_none_match(app):
@@ -201,7 +204,6 @@ def test_track_episodes_none_match(app):
     app.track_episodes(tracked_series)
 
     app.monitor_episodes.assert_not_called()
-    app.logger.info.assert_called_with("No new episodes to un/monitor")
 
 
 def test_monitor_episodes_calls_endpoint_and_logs(app):
@@ -221,7 +223,6 @@ def test_monitor_episodes_calls_endpoint_and_logs(app):
         "/episode/monitor",
         json_data={"episodeIds": [101, 102], "monitored": True}
     )
-    app.logger.info.assert_called_with("Setting monitor=True for episodes: ['Episode 101', 'Episode 102']")
 
 
 def test_get_episodes_for_series_returns_correct_episode_objects(app):
@@ -257,6 +258,4 @@ def test_get_episodes_for_series_returns_correct_episode_objects(app):
     assert episodes[1].has_aired is False
     assert episodes[1].is_monitored is False
     assert episodes[1].title == 'Episode 102'
-
-    app.logger.info.assert_not_called()
 
