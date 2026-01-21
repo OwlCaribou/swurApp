@@ -9,9 +9,6 @@ services:
       - DELAY_IN_MINUTES=60
       # Optional
       #- LOG_LEVEL=INFO
-      # Optional, but highly recommended
-      #- PUID=
-      #- PGID=
       #- TZ= # From IANA TZ database (see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List )
     restart: unless-stopped
     security_opt:
