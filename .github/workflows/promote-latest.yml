@@ -13,11 +13,8 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Pull dev image
-        run: docker pull owlcaribou/swurapp:dev
-
-      - name: Tag as latest
-        run: docker tag owlcaribou/swurapp:dev owlcaribou/swurapp:latest
-
-      - name: Push latest
-        run: docker push owlcaribou/swurapp:latest
+      # docker pull/tag/push collapses a multi-arch manifest list to the
+      # runner's architecture (amd64), dropping the arm64 image. imagetools
+      # copies the manifest list registry-side, keeping all platforms.
+      - name: Promote dev to latest
+        run: docker buildx imagetools create --tag owlcaribou/swurapp:latest owlcaribou/swurapp:dev
