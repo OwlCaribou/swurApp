@@ -5,7 +5,7 @@
 
 # swurApp
 
-swurApp is a simple Python program that unmonitors episodes in Sonarr until they have actually aired.
+swurApp is a simple program that unmonitors episodes in Sonarr until they have actually aired.
 This prevents downloading malicious or fake content that is often seeded to torrent sites before the episode has released.
 
 It's a workaround for https://github.com/Sonarr/Sonarr/issues/969 
@@ -15,7 +15,7 @@ The silly acronym stands for "Sonarr Wait Until Release App\[lication]."
 
 ## How It Works
 
-swurApp connects to the Sonarr API and unmonitors all episodes that haven't aired yet. At the same time, it checks for any episodes that _have_ aired and switches them to monitored.
+swurApp connects to the Sonarr API and unmonitors all episodes for the latest season of a show that haven't aired yet. It periodically checks if any episodes have aired, and then switches them to monitored, allowing Sonarr to grab releases for them.
 The next time Sonarr grabs episodes, the newly-monitored episodes will be picked up, and the unmonitored ones will be ignored, ensuring you don't grab any before air date.
 
 <table>
