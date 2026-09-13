@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 @pytest.fixture
 def app():
     mock_client = MagicMock()
-    app = SwurApp(api_key="abcd123", base_url="http://localhost:8989", tag_name="ignore")
+    app = SwurApp(api_key="abcd123", base_url="http://localhost:8989", tag_name="ignore", post_air_delay=0, wait_for_end=True)
     app.sonarr_client = mock_client
     return app
 
@@ -229,11 +229,20 @@ def test_get_episodes_for_series_returns_correct_episode_objects(app):
     now = datetime.now(timezone.utc)
     past_date = (now - timedelta(days=1)).strftime(swur.AIR_DATE_FORMAT)
     future_date = (now + timedelta(days=1)).strftime(swur.AIR_DATE_FORMAT)
+    future_before_end = (now - timedelta(minutes=20)).strftime(swur.AIR_DATE_FORMAT)
+    future_after_end = (now - timedelta(minutes=40)).strftime(swur.AIR_DATE_FORMAT)
+    future_after_end_and_delay = (now - timedelta(minutes=60)).strftime(swur.AIR_DATE_FORMAT)
+    
+    app.post_air_delay = 20
+    app.wait_for_end = True
 
     mock_response = MagicMock()
     mock_response.read.return_value = json.dumps([
-        {"id": 101, "title": "Episode 101", "airDateUtc": past_date, "monitored": True},
-        {"id": 102, "title": "Episode 102", "airDateUtc": future_date, "monitored": False},
+        {"id": 101, "title": "Episode 101", "airDateUtc": past_date, "monitored": True, "runtime": 30},
+        {"id": 102, "title": "Episode 102", "airDateUtc": future_date, "monitored": False, "runtime": 30},
+        {"id": 103, "title": "Episode 103", "airDateUtc": future_before_end, "monitored": False, "runtime": 30},
+        {"id": 104, "title": "Episode 104", "airDateUtc": future_after_end, "monitored": False, "runtime": 30},
+        {"id": 105, "title": "Episode 105", "airDateUtc": future_after_end_and_delay, "monitored": False, "runtime": 30},
     ]).encode()
     mock_response.status = 200
 
@@ -247,7 +256,7 @@ def test_get_episodes_for_series_returns_correct_episode_objects(app):
         params={"seriesId": 10, "seasonNumber": 3},
     )
 
-    assert len(episodes) == 2
+    assert len(episodes) == 5
 
     assert episodes[0].id == 101
     assert episodes[0].has_aired is True
@@ -258,4 +267,19 @@ def test_get_episodes_for_series_returns_correct_episode_objects(app):
     assert episodes[1].has_aired is False
     assert episodes[1].is_monitored is False
     assert episodes[1].title == 'Episode 102'
+    
+    assert episodes[2].id == 103
+    assert episodes[2].has_aired is False
+    assert episodes[2].is_monitored is False
+    assert episodes[2].title == 'Episode 103'
+    
+    assert episodes[3].id == 104
+    assert episodes[3].has_aired is False
+    assert episodes[3].is_monitored is False
+    assert episodes[3].title == 'Episode 104'
+    
+    assert episodes[4].id == 105
+    assert episodes[4].has_aired is True
+    assert episodes[4].is_monitored is False
+    assert episodes[4].title == 'Episode 105'
 

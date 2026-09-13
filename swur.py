@@ -1,7 +1,7 @@
 import argparse
 from dataclasses import dataclass
 from typing import List
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import logging
 import json
 import os
@@ -26,10 +26,12 @@ class Episode:
 
 
 class SwurApp:
-    def __init__(self, api_key, base_url, tag_name):
+    def __init__(self, api_key, base_url, tag_name, post_air_delay, wait_for_end):
         self.logger = logging.getLogger(__name__)
         self.sonarr_client = SonarrClient(base_url, api_key)
         self.tag_name = tag_name
+        self.post_air_delay = post_air_delay
+        self.wait_for_end = wait_for_end
 
     def run(self) -> None:
         ignore_tag_id = self.get_tag_id()
@@ -129,10 +131,12 @@ class SwurApp:
             air_date = episode.get("airDateUtc")
 
             if air_date is not None:
+                additional_delay = self.post_air_delay
+                additional_delay += int(episode["runtime"]) if self.wait_for_end else 0
                 episodes.append(Episode(
                     id=episode["id"],
                     title=episode["title"],
-                    has_aired=datetime.strptime(episode["airDateUtc"], AIR_DATE_FORMAT).replace(tzinfo=timezone.utc) < now,
+                    has_aired=datetime.strptime(episode["airDateUtc"], AIR_DATE_FORMAT).replace(tzinfo=timezone.utc) + timedelta(minutes=additional_delay) < now,
                     is_monitored=episode["monitored"],
                 ))
 
@@ -154,10 +158,12 @@ if __name__ == "__main__":
     parser.add_argument("--api-key", required=True, help="(Required) The API key for the Sonarr instance")
     parser.add_argument("--base-url", required=True, help="(Required) The base URL (scheme, host, and port) for the Sonarr instance")
     parser.add_argument("--ignore-tag-name", help="(Optional) The name of the tag for series that swurApp should NOT track. \"ignore\" by default.", default="ignore")
+    parser.add_argument("--post-air-delay", help="(Optional) Time after an episode has been aired in minutes before it should be monitored. 0 by default.", default=0, type=int)
+    parser.add_argument("--wait-for-end", help="(Optional) If swurApp should wait until after an episode's runtime is over before monitoring it. False by default.", default=False, type=bool)
     parser.add_argument("--log-level", help="(Optional) Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL")
 
     args = parser.parse_args()
 
     logging.basicConfig(level=_resolve_log_level(args.log_level))
-    app = SwurApp(args.api_key, args.base_url, args.ignore_tag_name)
+    app = SwurApp(args.api_key, args.base_url, args.ignore_tag_name, args.post_air_delay, args.wait_for_end)
     app.run()

@@ -55,6 +55,8 @@ docker run -d \
   -e BASE_URL="http://sonarr.example" \
   -e DELAY_IN_MINUTES=60 \
   -e IGNORE_TAG_NAME="ignore" \
+  -e POST_AIR_DELAY=20 \
+  -e WAIT_FOR_END="TRUE" \
   -e LOG_LEVEL="DEBUG" \
   --restart unless-stopped \
   docker.io/owlcaribou/swurapp:latest
@@ -74,9 +76,11 @@ docker run -d \
 | Python Parameter    | Docker Environment Variable | Required | Description                                                                                                                                                                                        | Default  |
 |---------------------|-----------------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
 | `--api-key`         | API_KEY                     | Yes      | The API key used to authenticate requests with the Sonarr instance. Get this under "Settings" -> "General" -> "API Key"                                                                            | None     |
-| `--base-url`        | BASE_URL                    | Yes      | The full base URL of your Sonarr server, including scheme (`http/https`), host, and port. For example: "`http://192.168.1.1:8989`" or "`https://sonarr.example.com`" | None     |
+| `--base-url`        | BASE_URL                    | Yes      | The full base URL of your Sonarr server, including scheme (`http/https`), host, and port. For example: "`http://192.168.1.1:8989`" or "`https://sonarr.example.com`"                               | None     |
 | N/A                 | DELAY_IN_MINUTES            | Yes      | How often to monitor and unmonitor episodes, in minutes                                                                                                                                            | 60       |
 | `--ignore-tag-name` | IGNORE_TAG_NAME             | No       | The tag name for series that should not be processed by swurApp                                                                                                                                    | `ignore` |
+| `--post-air-delay`  | POST_AIR_DELAY              | No       | Time after an episode has been aired in minutes before it should be monitored. 0 by default.                                                                                                       | 0        |
+| `--wait-for-end`    | WAIT_FOR_END                | No       | If swurApp should wait until after an episode's runtime is over before monitoring it. False by default.                                                                                            | `FALSE`  |
 | `--log-level`       | LOG_LEVEL                   | No       | The level to which to set the logging to (DEBUG, INFO, WARNING, ERROR, CRITICAL)                                                                                                                   | INFO     |
 
 
