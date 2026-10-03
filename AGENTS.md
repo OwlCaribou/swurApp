@@ -38,7 +38,7 @@ Keep these in sync with any parameter changes:
 
 ## CI / release
 
-- `.github/workflows/tests.yml` — runs pytest on push and PR
+- `.github/workflows/tests.yml` — runs pytest on pushes and PRs that change `.py` files, `requirements.txt`, or the workflow itself (extend `paths` if tests gain other inputs)
 - `.github/workflows/build.yml` — run manually; runs the tests, then builds and pushes the `dev` image
 - `.github/workflows/promote-latest.yml` — promotes to `latest` and cuts a GitHub release, with notes built by `.github/scripts/release-notes.sh`
 
