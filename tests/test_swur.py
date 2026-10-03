@@ -261,7 +261,6 @@ def test_get_episodes_for_series_returns_correct_episode_objects(app):
     assert episodes[1].title == 'Episode 102'
 
 
-
 def test_get_tracked_series_ids_includes_runtime(app):
     mock_response = MagicMock()
     mock_response.read.return_value = json.dumps([
@@ -310,58 +309,6 @@ def test_wait_until_end_is_default():
     assert SwurApp(api_key="abcd123", base_url="http://localhost:8989", tag_name="ignore").wait_until_end is True
 
 
-def test_get_episodes_for_series_waits_until_end(app):
-    # Started airing 30 minutes ago
-    started = (datetime.now(timezone.utc) - timedelta(minutes=30)).strftime(swur.AIR_DATE_FORMAT)
-    app.sonarr_client.call_endpoint.return_value = _episodes_response([
-        {"id": 101, "title": "Still airing", "airDateUtc": started, "runtime": 60, "monitored": False},
-        {"id": 102, "title": "Finished", "airDateUtc": started, "runtime": 20, "monitored": False},
-    ])
-
-    episodes = app.get_episodes_for_series(series_id=10, season=1)
-
-    assert episodes[0].has_aired is False
-    assert episodes[1].has_aired is True
-
-
-def test_get_episodes_for_series_falls_back_to_series_runtime(app):
-    started = (datetime.now(timezone.utc) - timedelta(minutes=30)).strftime(swur.AIR_DATE_FORMAT)
-    app.sonarr_client.call_endpoint.return_value = _episodes_response([
-        {"id": 101, "title": "No runtime", "airDateUtc": started, "monitored": False},
-        {"id": 102, "title": "Zero runtime", "airDateUtc": started, "runtime": 0, "monitored": False},
-        {"id": 103, "title": "Null runtime", "airDateUtc": started, "runtime": None, "monitored": False},
-    ])
-
-    episodes = app.get_episodes_for_series(series_id=10, season=1, series_runtime=60)
-
-    assert episodes[0].has_aired is False
-    assert episodes[1].has_aired is False
-    assert episodes[2].has_aired is False
-
-
-def test_get_episodes_for_series_without_any_runtime_uses_air_date(app):
-    started = (datetime.now(timezone.utc) - timedelta(minutes=1)).strftime(swur.AIR_DATE_FORMAT)
-    app.sonarr_client.call_endpoint.return_value = _episodes_response([
-        {"id": 101, "title": "No runtime", "airDateUtc": started, "monitored": False},
-    ])
-
-    episodes = app.get_episodes_for_series(series_id=10, season=1)
-
-    assert episodes[0].has_aired is True
-
-
-def test_get_episodes_for_series_wait_until_end_disabled(app):
-    app.wait_until_end = False
-    started = (datetime.now(timezone.utc) - timedelta(minutes=30)).strftime(swur.AIR_DATE_FORMAT)
-    app.sonarr_client.call_endpoint.return_value = _episodes_response([
-        {"id": 101, "title": "Still airing", "airDateUtc": started, "runtime": 60, "monitored": False},
-    ])
-
-    episodes = app.get_episodes_for_series(series_id=10, season=1, series_runtime=60)
-
-    assert episodes[0].has_aired is True
-
-
 @pytest.mark.parametrize("value, expected", [
     ("true", True), ("True", True), ("TRUE", True), (" true ", True),
     ("false", False), ("False", False), ("FALSE", False), (" false ", False),
@@ -374,3 +321,47 @@ def test_parse_bool(value, expected):
 def test_parse_bool_invalid(value):
     with pytest.raises(swur.argparse.ArgumentTypeError):
         swur._parse_bool(value)
+
+
+def test_extra_delay_defaults_to_zero():
+    assert SwurApp(api_key="abcd123", base_url="http://localhost:8989", tag_name="ignore").extra_delay == 0
+
+
+MISSING = object()  # Episode has no "runtime" key
+
+
+@pytest.mark.parametrize(
+    "aired_mins_ago, ep_runtime, series_runtime, wait_until_end, extra_delay, expected", [
+        # Still airing / finished
+        (30, 60, 0, True, 0, False),
+        (30, 20, 0, True, 0, True),
+        # Falls back to series runtime
+        (30, MISSING, 60, True, 0, False),
+        (30, 0, 60, True, 0, False),
+        (30, None, 60, True, 0, False),
+        # No runtime anywhere, so air date only
+        (1, MISSING, 0, True, 0, True),
+        # wait_until_end disabled ignores runtime
+        (30, 60, 60, False, 0, True),
+        # Extra delay with and without wait_until_end
+        (90, 61, 0, True, 30, False),
+        (90, 59, 0, True, 30, True),
+        (29, 60, 0, False, 30, False),
+        (31, 60, 0, False, 30, True),
+        # Negative extra delay (airs in 20 minutes)
+        (-20, 60, 0, True, -30, False),
+        (-20, 60, 0, False, -30, True),
+    ])
+def test_get_episodes_for_series_has_aired(app, aired_mins_ago, ep_runtime, series_runtime,
+                                           wait_until_end, extra_delay, expected):
+    app.wait_until_end = wait_until_end
+    app.extra_delay = extra_delay
+    air_date = (datetime.now(timezone.utc) - timedelta(minutes=aired_mins_ago)).strftime(swur.AIR_DATE_FORMAT)
+    episode = {"id": 101, "title": "Episode", "airDateUtc": air_date, "monitored": False}
+    if ep_runtime is not MISSING:
+        episode["runtime"] = ep_runtime
+    app.sonarr_client.call_endpoint.return_value = _episodes_response([episode])
+
+    episodes = app.get_episodes_for_series(series_id=10, season=1, series_runtime=series_runtime)
+
+    assert episodes[0].has_aired is expected

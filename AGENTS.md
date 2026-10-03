@@ -17,6 +17,7 @@ swurApp unmonitors Sonarr episodes until they have aired, then re-monitors them.
 
 - Run the suite before and after changes: `pip install -r requirements.txt && pytest`
 - Add or update tests in `tests/` for any behavior change or bug fix.
+- Prefer `@pytest.mark.parametrize` tables over separate near-identical tests when cases differ only in inputs and expected output (see `test_get_episodes_for_series_has_aired`).
 
 ### README
 

@@ -27,11 +27,12 @@ class Episode:
 
 
 class SwurApp:
-    def __init__(self, api_key, base_url, tag_name, wait_until_end=True):
+    def __init__(self, api_key, base_url, tag_name, wait_until_end=True, extra_delay=0):
         self.logger = logging.getLogger(__name__)
         self.sonarr_client = SonarrClient(base_url, api_key)
         self.tag_name = tag_name
         self.wait_until_end = wait_until_end
+        self.extra_delay = extra_delay
 
     def run(self) -> None:
         ignore_tag_id = self.get_tag_id()
@@ -139,6 +140,8 @@ class SwurApp:
                     runtime = episode.get("runtime") or series_runtime
                     aired_at += timedelta(minutes=runtime)
 
+                aired_at += timedelta(minutes=self.extra_delay)
+
                 episodes.append(Episode(
                     id=episode["id"],
                     title=episode["title"],
@@ -176,9 +179,11 @@ if __name__ == "__main__":
     parser.add_argument("--log-level", help="(Optional) Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL")
     parser.add_argument("--wait-until-end", type=_parse_bool, default="True",
                         help="(Optional) Wait until an episode has finished airing (air date + runtime) before monitoring it. \"True\" by default.")
+    parser.add_argument("--extra-delay", type=int, default="0",
+                        help="(Optional) Additional minutes to wait before monitoring an episode, on top of the air date (and runtime, if --wait-until-end is enabled). May be negative to monitor episodes earlier. 0 by default.")
 
     args = parser.parse_args()
 
     logging.basicConfig(level=_resolve_log_level(args.log_level))
-    app = SwurApp(args.api_key, args.base_url, args.ignore_tag_name, args.wait_until_end)
+    app = SwurApp(args.api_key, args.base_url, args.ignore_tag_name, args.wait_until_end, args.extra_delay)
     app.run()

@@ -5,16 +5,18 @@ services:
       # Required
       - API_KEY=
       - BASE_URL=
-      # Optional
+      ### Optional ###
       # The tag name for series that swurApp should not track
       #- IGNORE_TAG_NAME=ignore
       # How often to check the Sonarr API, in minutes
       #- CHECK_INTERVAL=60
       # Whether to wait until an episode finishes airing (air date + runtime) before monitoring it. Only supported in Sonarr v4 and higher.
       #- WAIT_UNTIL_END=True
+      # Additional minutes to wait before monitoring an episode, on top of the air date (and runtime, if WAIT_UNTIL_END is True). Can be negative to monitor episodes earlier
+      #- EXTRA_DELAY=0
       # The log level minimum to enable. Don't change if you don't need it
       #- LOG_LEVEL=INFO
-      # From IANA TZ database (see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List )
+      # Timezone from IANA TZ database (see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List )
       #- TZ=
     restart: unless-stopped
     security_opt:
