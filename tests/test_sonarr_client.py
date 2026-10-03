@@ -101,3 +101,13 @@ def test_call_endpoint_without_json_sends_no_body(mock_https_conn, client):
     client.call_endpoint("GET", "/series")
 
     assert mock_conn.request.call_args.kwargs["body"] is None
+
+
+@patch("http.client.HTTPSConnection")
+def test_call_endpoint_does_not_modify_callers_params(mock_https_conn, client):
+    mock_https_conn.return_value.getresponse.return_value = MagicMock(status=200)
+    params = {"seriesId": 10}
+
+    client.call_endpoint("GET", "/episode", params=params)
+
+    assert params == {"seriesId": 10}

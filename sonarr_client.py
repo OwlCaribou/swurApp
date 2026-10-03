@@ -20,10 +20,8 @@ class SonarrClient:
         reraise=True,
     )
     def call_endpoint(self, http_method: str, endpoint: str, params=None, json_data=None) -> HTTPResponse:
-        if params is None:
-            params = {}
-
-        params["apiKey"] = self.api_key
+        # Copy so the caller's dict never ends up holding the API key
+        params = {**(params or {}), "apiKey": self.api_key}
 
         base = f"{self.base_url}{self.BASE_PATH}{endpoint}"
         parsed_url = urllib.parse.urlparse(base)
