@@ -40,4 +40,9 @@ Keep these in sync with any parameter changes:
 
 - `.github/workflows/tests.yml` — runs pytest on push and PR
 - `.github/workflows/build.yml` — builds the Docker image
-- `.github/workflows/promote-latest.yml` — promotes to `latest` and cuts a GitHub release
+- `.github/workflows/promote-latest.yml` — promotes to `latest` and cuts a GitHub release, with notes built by `.github/scripts/release-notes.sh`
+
+Release notes list one line per commit on `main` (or the PR title for merged PRs), so:
+
+- Write commit subjects and PR titles as user-facing changes, e.g. "Add EXTRA_DELAY to shift when episodes are monitored".
+- Add `[skip changelog]` to the commit message or PR title for internal-only changes (tests, CI, docs for agents).
