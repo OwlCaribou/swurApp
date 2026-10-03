@@ -211,9 +211,20 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+# Only these arguments are logged at startup. Anything not listed (e.g. the API key and base URL) is treated as sensitive
+LOGGED_ARGS = ["ignore_tag_name", "log_level", "wait_until_end", "extra_delay"]
+
+
+def describe_config(args: argparse.Namespace) -> str:
+    values = {name: getattr(args, name) for name in LOGGED_ARGS}
+    values["log_level"] = logging.getLevelName(values["log_level"])
+    return ", ".join(f"{name}={value}" for name, value in values.items())
+
+
 if __name__ == "__main__":
     args = build_parser().parse_args()
 
     logging.basicConfig(level=args.log_level)
+    logging.getLogger(__name__).info(f"Starting with {describe_config(args)}")
     app = SwurApp(args.api_key, args.base_url, args.ignore_tag_name, args.wait_until_end, args.extra_delay)
     app.run()

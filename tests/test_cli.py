@@ -67,3 +67,16 @@ def test_build_parser_invalid_log_level_env(monkeypatch):
     with pytest.raises(SystemExit) as exc:
         swur.build_parser().parse_args(REQUIRED_ARGS)
     assert exc.value.code == 2
+
+
+def test_describe_config_excludes_sensitive_values(monkeypatch):
+    monkeypatch.delenv("LOG_LEVEL", raising=False)
+    args = swur.build_parser().parse_args([
+        "--api-key", "secret-key", "--base-url", "http://secret-host:8989",
+        "--ignore-tag-name", "skip", "--wait-until-end", "false", "--extra-delay", "-15",
+    ])
+
+    description = swur.describe_config(args)
+
+    assert description == "ignore_tag_name=skip, log_level=INFO, wait_until_end=False, extra_delay=-15"
+    assert "secret" not in description
