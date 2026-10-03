@@ -5,8 +5,9 @@ services:
       # Required
       - API_KEY=
       - BASE_URL=
-      - IGNORE_TAG_NAME=ignore
       # Optional
+      # The tag name for series that swurApp should not track
+      #- IGNORE_TAG_NAME=ignore
       # How often to check the Sonarr API, in minutes
       #- CHECK_INTERVAL=60
       # Whether to wait until an episode finishes airing (air date + runtime) before monitoring it. Only supported in Sonarr v4 and higher.
