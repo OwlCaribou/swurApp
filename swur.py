@@ -221,10 +221,20 @@ def describe_config(args: argparse.Namespace) -> str:
     return ", ".join(f"{name}={value}" for name, value in values.items())
 
 
-if __name__ == "__main__":
-    args = build_parser().parse_args()
+def main(argv: List[str] | None = None) -> None:
+    args = build_parser().parse_args(argv)
 
     logging.basicConfig(level=args.log_level)
     logging.getLogger(__name__).info(f"Starting with {describe_config(args)}")
-    app = SwurApp(args.api_key, args.base_url, args.ignore_tag_name, args.wait_until_end, args.extra_delay)
+    app = SwurApp(
+        api_key=args.api_key,
+        base_url=args.base_url,
+        tag_name=args.ignore_tag_name,
+        wait_until_end=args.wait_until_end,
+        extra_delay=args.extra_delay,
+    )
     app.run()
+
+
+if __name__ == "__main__":
+    main()

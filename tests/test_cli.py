@@ -1,5 +1,6 @@
 import swur
 import pytest
+from unittest.mock import MagicMock
 
 
 @pytest.mark.parametrize("value, expected", [
@@ -80,3 +81,20 @@ def test_describe_config_excludes_sensitive_values(monkeypatch):
 
     assert description == "ignore_tag_name=skip, log_level=INFO, wait_until_end=False, extra_delay=-15"
     assert "secret" not in description
+
+
+def test_main_passes_arguments_to_app(monkeypatch):
+    monkeypatch.delenv("LOG_LEVEL", raising=False)
+    mock_app_class = MagicMock()
+    monkeypatch.setattr(swur, "SwurApp", mock_app_class)
+
+    swur.main(REQUIRED_ARGS + ["--ignore-tag-name", "skip", "--wait-until-end", "false", "--extra-delay", "15"])
+
+    mock_app_class.assert_called_once_with(
+        api_key="abcd123",
+        base_url="http://localhost:8989",
+        tag_name="skip",
+        wait_until_end=False,
+        extra_delay=15,
+    )
+    mock_app_class.return_value.run.assert_called_once_with()

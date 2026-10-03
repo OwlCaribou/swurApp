@@ -351,3 +351,27 @@ def test_get_episodes_for_series_has_aired(app, aired_mins_ago, ep_runtime, seri
     episodes = app.get_episodes_for_series(series_id=10, season=1, series_runtime=series_runtime)
 
     assert episodes[0].has_aired is expected
+
+
+def test_get_episodes_for_series_skips_episodes_without_air_date(app):
+    aired = (datetime.now(timezone.utc) - timedelta(days=1)).strftime(swur.AIR_DATE_FORMAT)
+    app.sonarr_client.call_endpoint.return_value = _episodes_response([
+        {"id": 101, "title": "No air date key", "monitored": True},
+        {"id": 102, "title": "Null air date", "airDateUtc": None, "monitored": True},
+        {"id": 103, "title": "Aired", "airDateUtc": aired, "monitored": False},
+    ])
+
+    episodes = app.get_episodes_for_series(series_id=10, season=1)
+
+    assert [episode.id for episode in episodes] == [103]
+
+
+def test_run_passes_results_between_steps(app):
+    app.get_tag_id = MagicMock(return_value=7)
+    app.get_tracked_series_ids = MagicMock(return_value=["series"])
+    app.track_episodes = MagicMock()
+
+    app.run()
+
+    app.get_tracked_series_ids.assert_called_once_with(7)
+    app.track_episodes.assert_called_once_with(["series"])
