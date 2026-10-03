@@ -7,9 +7,14 @@ services:
       - BASE_URL=
       - IGNORE_TAG_NAME=ignore
       # Optional
-      #- CHECK_INTERVAL=60 # Minutes
+      # How often to check the Sonarr API, in minutes
+      #- CHECK_INTERVAL=60
+      # Whether to wait until an episode finishes airing (air date + runtime) before monitoring it. Only supported in Sonarr v4 and higher.
+      #- WAIT_UNTIL_END=True
+      # The log level minimum to enable. Don't change if you don't need it
       #- LOG_LEVEL=INFO
-      #- TZ= # From IANA TZ database (see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List )
+      # From IANA TZ database (see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List )
+      #- TZ=
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true

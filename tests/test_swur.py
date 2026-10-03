@@ -135,6 +135,7 @@ def test_get_tracked_series_ids(app):
     assert len(tracked) == 1
     assert tracked[0].id == 1
     assert tracked[0].latest_season == 2
+    assert tracked[0].runtime == 0
 
 
 def test_get_tracked_series_ids_none_match(app):
@@ -167,7 +168,7 @@ def test_get_tracked_series_ids_none_match(app):
 
 
 def test_track_episodes(app, monkeypatch):
-    tracked_series = [swur.Series(id=1, latest_season=2)]
+    tracked_series = [swur.Series(id=1, latest_season=2, runtime=30)]
     mock_episodes = [
         MagicMock(id=101, title="Episode 101", has_aired=True, is_monitored=False),  # Should monitor
         MagicMock(id=102, title="Episode 102", has_aired=False, is_monitored=True),  # Should unmonitor
@@ -180,7 +181,7 @@ def test_track_episodes(app, monkeypatch):
 
     app.track_episodes(tracked_series)
 
-    app.get_episodes_for_series.assert_called_once_with(1, 2)
+    app.get_episodes_for_series.assert_called_once_with(1, 2, 30)
     app.monitor_episodes.assert_any_call([mock_episodes[0]], True)
     app.monitor_episodes.assert_any_call([mock_episodes[1]], False)
     app.sonarr_client.call_endpoint.assert_called_with(
@@ -259,3 +260,117 @@ def test_get_episodes_for_series_returns_correct_episode_objects(app):
     assert episodes[1].is_monitored is False
     assert episodes[1].title == 'Episode 102'
 
+
+
+def test_get_tracked_series_ids_includes_runtime(app):
+    mock_response = MagicMock()
+    mock_response.read.return_value = json.dumps([
+        {
+            "id": 1,
+            "title": "Show A",
+            "monitored": True,
+            "tags": [],
+            "runtime": 45,
+            "seasons": [{"seasonNumber": 1, "monitored": True}],
+        },
+    ]).encode()
+    app.sonarr_client.call_endpoint.return_value = mock_response
+
+    tracked = app.get_tracked_series_ids(ignore_tag_id=None)
+
+    assert tracked[0].runtime == 45
+
+
+def test_get_tracked_series_ids_null_runtime_defaults_to_zero(app):
+    mock_response = MagicMock()
+    mock_response.read.return_value = json.dumps([
+        {
+            "id": 1,
+            "title": "Show A",
+            "monitored": True,
+            "tags": [],
+            "runtime": None,
+            "seasons": [{"seasonNumber": 1, "monitored": True}],
+        },
+    ]).encode()
+    app.sonarr_client.call_endpoint.return_value = mock_response
+
+    tracked = app.get_tracked_series_ids(ignore_tag_id=None)
+
+    assert tracked[0].runtime == 0
+
+
+def _episodes_response(episodes):
+    mock_response = MagicMock()
+    mock_response.read.return_value = json.dumps(episodes).encode()
+    return mock_response
+
+
+def test_wait_until_end_is_default():
+    assert SwurApp(api_key="abcd123", base_url="http://localhost:8989", tag_name="ignore").wait_until_end is True
+
+
+def test_get_episodes_for_series_waits_until_end(app):
+    # Started airing 30 minutes ago
+    started = (datetime.now(timezone.utc) - timedelta(minutes=30)).strftime(swur.AIR_DATE_FORMAT)
+    app.sonarr_client.call_endpoint.return_value = _episodes_response([
+        {"id": 101, "title": "Still airing", "airDateUtc": started, "runtime": 60, "monitored": False},
+        {"id": 102, "title": "Finished", "airDateUtc": started, "runtime": 20, "monitored": False},
+    ])
+
+    episodes = app.get_episodes_for_series(series_id=10, season=1)
+
+    assert episodes[0].has_aired is False
+    assert episodes[1].has_aired is True
+
+
+def test_get_episodes_for_series_falls_back_to_series_runtime(app):
+    started = (datetime.now(timezone.utc) - timedelta(minutes=30)).strftime(swur.AIR_DATE_FORMAT)
+    app.sonarr_client.call_endpoint.return_value = _episodes_response([
+        {"id": 101, "title": "No runtime", "airDateUtc": started, "monitored": False},
+        {"id": 102, "title": "Zero runtime", "airDateUtc": started, "runtime": 0, "monitored": False},
+        {"id": 103, "title": "Null runtime", "airDateUtc": started, "runtime": None, "monitored": False},
+    ])
+
+    episodes = app.get_episodes_for_series(series_id=10, season=1, series_runtime=60)
+
+    assert episodes[0].has_aired is False
+    assert episodes[1].has_aired is False
+    assert episodes[2].has_aired is False
+
+
+def test_get_episodes_for_series_without_any_runtime_uses_air_date(app):
+    started = (datetime.now(timezone.utc) - timedelta(minutes=1)).strftime(swur.AIR_DATE_FORMAT)
+    app.sonarr_client.call_endpoint.return_value = _episodes_response([
+        {"id": 101, "title": "No runtime", "airDateUtc": started, "monitored": False},
+    ])
+
+    episodes = app.get_episodes_for_series(series_id=10, season=1)
+
+    assert episodes[0].has_aired is True
+
+
+def test_get_episodes_for_series_wait_until_end_disabled(app):
+    app.wait_until_end = False
+    started = (datetime.now(timezone.utc) - timedelta(minutes=30)).strftime(swur.AIR_DATE_FORMAT)
+    app.sonarr_client.call_endpoint.return_value = _episodes_response([
+        {"id": 101, "title": "Still airing", "airDateUtc": started, "runtime": 60, "monitored": False},
+    ])
+
+    episodes = app.get_episodes_for_series(series_id=10, season=1, series_runtime=60)
+
+    assert episodes[0].has_aired is True
+
+
+@pytest.mark.parametrize("value, expected", [
+    ("true", True), ("True", True), ("TRUE", True), (" true ", True),
+    ("false", False), ("False", False), ("FALSE", False), (" false ", False),
+])
+def test_parse_bool(value, expected):
+    assert swur._parse_bool(value) is expected
+
+
+@pytest.mark.parametrize("value", ["maybe", "1", "0", "yes", "no", ""])
+def test_parse_bool_invalid(value):
+    with pytest.raises(swur.argparse.ArgumentTypeError):
+        swur._parse_bool(value)

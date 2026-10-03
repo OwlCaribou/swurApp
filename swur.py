@@ -1,7 +1,7 @@
 import argparse
 from dataclasses import dataclass
 from typing import List
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import logging
 import json
 import os
@@ -15,6 +15,7 @@ AIR_DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 class Series:
     id: int
     latest_season: int
+    runtime: int = 0
 
 
 @dataclass
@@ -26,10 +27,11 @@ class Episode:
 
 
 class SwurApp:
-    def __init__(self, api_key, base_url, tag_name):
+    def __init__(self, api_key, base_url, tag_name, wait_until_end=True):
         self.logger = logging.getLogger(__name__)
         self.sonarr_client = SonarrClient(base_url, api_key)
         self.tag_name = tag_name
+        self.wait_until_end = wait_until_end
 
     def run(self) -> None:
         ignore_tag_id = self.get_tag_id()
@@ -73,8 +75,9 @@ class SwurApp:
 
             tracked.append(Series(
                 id=series["id"],
-                latest_season=latest_season["seasonNumber"])
-            )
+                latest_season=latest_season["seasonNumber"],
+                runtime=series.get("runtime") or 0,
+            ))
 
         return tracked
 
@@ -83,7 +86,7 @@ class SwurApp:
         episodes_to_unmonitor = []
 
         for series in tracked_series_ids:
-            episodes = self.get_episodes_for_series(series.id, series.latest_season)
+            episodes = self.get_episodes_for_series(series.id, series.latest_season, series.runtime)
 
             for episode in episodes:
                 if episode.has_aired and not episode.is_monitored:
@@ -111,7 +114,7 @@ class SwurApp:
 
         self.sonarr_client.call_endpoint("PUT", "/episode/monitor", json_data={"episodeIds": episode_ids, "monitored": should_monitor})
 
-    def get_episodes_for_series(self, series_id: int, season: int) -> List[Episode]:
+    def get_episodes_for_series(self, series_id: int, season: int, series_runtime: int = 0) -> List[Episode]:
         params = {
             "seriesId": series_id,
             "seasonNumber": season,
@@ -129,10 +132,17 @@ class SwurApp:
             air_date = episode.get("airDateUtc")
 
             if air_date is not None:
+                aired_at = datetime.strptime(air_date, AIR_DATE_FORMAT).replace(tzinfo=timezone.utc)
+
+                # Wait until the episode has finished airing. Fall back to the series runtime if the episode has none
+                if self.wait_until_end:
+                    runtime = episode.get("runtime") or series_runtime
+                    aired_at += timedelta(minutes=runtime)
+
                 episodes.append(Episode(
                     id=episode["id"],
                     title=episode["title"],
-                    has_aired=datetime.strptime(episode["airDateUtc"], AIR_DATE_FORMAT).replace(tzinfo=timezone.utc) < now,
+                    has_aired=aired_at < now,
                     is_monitored=episode["monitored"],
                 ))
 
@@ -142,6 +152,15 @@ class SwurApp:
         self.logger.info(f"Triggering episode search for {len(episode_ids)} episodes")
 
         self.sonarr_client.call_endpoint("POST", "/command", json_data={"name": "EpisodeSearch", "episodeIds": episode_ids})
+
+
+def _parse_bool(value: str) -> bool:
+    normalized = value.strip().lower()
+    if normalized == "true":
+        return True
+    if normalized == "false":
+        return False
+    raise argparse.ArgumentTypeError(f"Expected a boolean value (true/false), got \"{value}\"")
 
 
 def _resolve_log_level(cli_value: str | None) -> int:
@@ -155,9 +174,11 @@ if __name__ == "__main__":
     parser.add_argument("--base-url", required=True, help="(Required) The base URL (scheme, host, and port) for the Sonarr instance")
     parser.add_argument("--ignore-tag-name", help="(Optional) The name of the tag for series that swurApp should NOT track. \"ignore\" by default.", default="ignore")
     parser.add_argument("--log-level", help="(Optional) Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL")
+    parser.add_argument("--wait-until-end", type=_parse_bool, default="True",
+                        help="(Optional) Wait until an episode has finished airing (air date + runtime) before monitoring it. \"True\" by default.")
 
     args = parser.parse_args()
 
     logging.basicConfig(level=_resolve_log_level(args.log_level))
-    app = SwurApp(args.api_key, args.base_url, args.ignore_tag_name)
+    app = SwurApp(args.api_key, args.base_url, args.ignore_tag_name, args.wait_until_end)
     app.run()
