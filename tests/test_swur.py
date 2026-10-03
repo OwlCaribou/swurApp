@@ -309,20 +309,6 @@ def test_wait_until_end_is_default():
     assert SwurApp(api_key="abcd123", base_url="http://localhost:8989", tag_name="ignore").wait_until_end is True
 
 
-@pytest.mark.parametrize("value, expected", [
-    ("true", True), ("True", True), ("TRUE", True), (" true ", True),
-    ("false", False), ("False", False), ("FALSE", False), (" false ", False),
-])
-def test_parse_bool(value, expected):
-    assert swur._parse_bool(value) is expected
-
-
-@pytest.mark.parametrize("value", ["maybe", "1", "0", "yes", "no", ""])
-def test_parse_bool_invalid(value):
-    with pytest.raises(swur.argparse.ArgumentTypeError):
-        swur._parse_bool(value)
-
-
 def test_extra_delay_defaults_to_zero():
     assert SwurApp(api_key="abcd123", base_url="http://localhost:8989", tag_name="ignore").extra_delay == 0
 

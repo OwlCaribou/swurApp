@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import logging
 import json
 import os
+import urllib.parse
 
 from sonarr_client import SonarrClient
 
@@ -166,24 +167,53 @@ def _parse_bool(value: str) -> bool:
     raise argparse.ArgumentTypeError(f"Expected a boolean value (true/false), got \"{value}\"")
 
 
-def _resolve_log_level(cli_value: str | None) -> int:
-    name = (cli_value or os.getenv("LOG_LEVEL", "INFO")).upper()
-    return getattr(logging, name, logging.INFO)
+def _parse_non_empty(value: str) -> str:
+    stripped = value.strip()
+    if not stripped:
+        raise argparse.ArgumentTypeError("Expected a non-empty value")
+    return stripped
 
 
-if __name__ == "__main__":
+def _parse_base_url(value: str) -> str:
+    stripped = value.strip()
+    parsed = urllib.parse.urlparse(stripped)
+    try:
+        parsed.port
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"Invalid port in base URL \"{value}\"")
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        raise argparse.ArgumentTypeError(f"Expected a URL like \"http://host:port\", got \"{value}\"")
+    return stripped
+
+
+LOG_LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
+
+def _parse_log_level(value: str) -> int:
+    name = value.strip().upper()
+    if name not in LOG_LEVELS:
+        raise argparse.ArgumentTypeError(f"Expected one of {', '.join(LOG_LEVELS)}, got \"{value}\"")
+    return getattr(logging, name)
+
+
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--api-key", required=True, help="(Required) The API key for the Sonarr instance")
-    parser.add_argument("--base-url", required=True, help="(Required) The base URL (scheme, host, and port) for the Sonarr instance")
-    parser.add_argument("--ignore-tag-name", help="(Optional) The name of the tag for series that swurApp should NOT track. \"ignore\" by default.", default="ignore")
-    parser.add_argument("--log-level", help="(Optional) Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL")
+    parser.add_argument("--api-key", required=True, type=_parse_non_empty, help="(Required) The API key for the Sonarr instance")
+    parser.add_argument("--base-url", required=True, type=_parse_base_url, help="(Required) The base URL (scheme, host, and port) for the Sonarr instance")
+    parser.add_argument("--ignore-tag-name", type=_parse_non_empty, default="ignore",
+                        help="(Optional) The name of the tag for series that swurApp should NOT track. \"ignore\" by default.")
+    parser.add_argument("--log-level", type=_parse_log_level, default=os.getenv("LOG_LEVEL", "INFO"),
+                        help="(Optional) Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL")
     parser.add_argument("--wait-until-end", type=_parse_bool, default="True",
                         help="(Optional) Wait until an episode has finished airing (air date + runtime) before monitoring it. \"True\" by default.")
     parser.add_argument("--extra-delay", type=int, default="0",
                         help="(Optional) Additional minutes to wait before monitoring an episode, on top of the air date (and runtime, if --wait-until-end is enabled). May be negative to monitor episodes earlier. 0 by default.")
+    return parser
 
-    args = parser.parse_args()
 
-    logging.basicConfig(level=_resolve_log_level(args.log_level))
+if __name__ == "__main__":
+    args = build_parser().parse_args()
+
+    logging.basicConfig(level=args.log_level)
     app = SwurApp(args.api_key, args.base_url, args.ignore_tag_name, args.wait_until_end, args.extra_delay)
     app.run()

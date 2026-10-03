@@ -32,6 +32,7 @@ Update `README.md` when a change affects users, in particular:
 Keep these in sync with any parameter changes:
 
 - `Dockerfile` `CMD` (passes env vars through to `swur.py`; give optional vars a default, e.g. `${WAIT_UNTIL_END:-True}`, so an unset var doesn't break argument parsing)
+- New arguments should validate their values with an argparse `type` so bad input fails immediately at startup. `swur.py` exits with code 2 on invalid arguments, and the `CMD` loop relies on that to stop the container instead of retrying
 - `docker-compose.yml` (documents required and optional env vars)
 
 ## CI / release

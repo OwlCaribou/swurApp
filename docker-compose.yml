@@ -8,7 +8,7 @@ services:
       ### Optional ###
       # The tag name for series that swurApp should not track
       #- IGNORE_TAG_NAME=ignore
-      # How often to check the Sonarr API, in minutes
+      # How often to check the Sonarr API, in minutes. Used to be called `DELAY_IN_MINUTES`, but that is deprecated.
       #- CHECK_INTERVAL=60
       # Whether to wait until an episode finishes airing (air date + runtime) before monitoring it. Only supported in Sonarr v4 and higher.
       #- WAIT_UNTIL_END=True

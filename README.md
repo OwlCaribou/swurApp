@@ -84,6 +84,8 @@ docker run -d \
 | `--log-level`       | LOG_LEVEL                   | No       | The level to which to set the logging to (DEBUG, INFO, WARNING, ERROR, CRITICAL)                                                                                                                                                                                                             | INFO     |
 | `--wait-until-end`  | WAIT_UNTIL_END              | No       | Wait until an episode has finished airing (air date + runtime) before monitoring it. Set to `False` to monitor as soon as the episode starts airing.                                                                                                                                         | `True`   |
 
+All values are checked at startup. If any is invalid, swurApp exits immediately with an error explaining which one (in Docker, the container stops instead of retrying every `CHECK_INTERVAL`).
+
 ## Limitations
 
 - Only works for the latest season. This should be fine unless a series comes out with a new season very quickly after an old one ends. That's why it's important not to run this script too infrequently.
