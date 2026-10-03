@@ -2,6 +2,15 @@ name: Promote to Latest
 
 on:
   workflow_dispatch:
+    inputs:
+      bump:
+        description: Version component to bump for the release
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
 
 jobs:
   promote:
@@ -18,3 +27,38 @@ jobs:
       # copies the manifest list registry-side, keeping all platforms.
       - name: Promote dev to latest
         run: docker buildx imagetools create --tag owlcaribou/swurapp:latest owlcaribou/swurapp:dev
+
+  release:
+    needs: promote
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: version
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          last=$(git tag --list 'v*.*.*' --sort=-v:refname | head -n1)
+          if [ -z "$last" ]; then
+            next=v1.0.0
+          else
+            IFS=. read -r major minor patch <<< "${last#v}"
+            case "$BUMP" in
+              major) next="v$((major + 1)).0.0" ;;
+              minor) next="v${major}.$((minor + 1)).0" ;;
+              *)     next="v${major}.${minor}.$((patch + 1))" ;;
+            esac
+          fi
+          echo "Releasing $next (previous: ${last:-none})"
+          echo "tag=$next" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: gh release create "$TAG" --target "$GITHUB_SHA" --title "$TAG" --generate-notes --latest
