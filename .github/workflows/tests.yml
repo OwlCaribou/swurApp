@@ -5,10 +5,12 @@ on:
     paths-ignore:
       - 'README.md'
       - 'LICENSE'
+      - 'AGENTS.md'
   pull_request:
     paths-ignore:
       - 'README.md'
       - 'LICENSE'
+      - 'AGENTS.md'
 
 jobs:
   test:
