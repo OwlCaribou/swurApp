@@ -6,11 +6,21 @@ on:
       - 'README.md'
       - 'LICENSE'
       - 'AGENTS.md'
+      - '.gitignore'
+      - 'docker-compose.yml'
+      - '.github/dependabot.yml'
+      - '.github/scripts/**'
+      - '.github/workflows/promote-latest.yml'
   pull_request:
     paths-ignore:
       - 'README.md'
       - 'LICENSE'
       - 'AGENTS.md'
+      - '.gitignore'
+      - 'docker-compose.yml'
+      - '.github/dependabot.yml'
+      - '.github/scripts/**'
+      - '.github/workflows/promote-latest.yml'
 
 jobs:
   test:
