@@ -6,8 +6,8 @@ services:
       - API_KEY=
       - BASE_URL=
       - IGNORE_TAG_NAME=ignore
-      - DELAY_IN_MINUTES=60
       # Optional
+      #- CHECK_INTERVAL=60 # Minutes
       #- LOG_LEVEL=INFO
       #- TZ= # From IANA TZ database (see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List )
     restart: unless-stopped

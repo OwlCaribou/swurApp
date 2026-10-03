@@ -8,14 +8,15 @@
 swurApp is a simple program that unmonitors episodes in Sonarr until they have actually aired.
 This prevents downloading malicious or fake content that is often seeded to torrent sites before the episode has released.
 
-It's a workaround for https://github.com/Sonarr/Sonarr/issues/969 
+It's a workaround for https://github.com/Sonarr/Sonarr/issues/969
 _Note_: A week after the release of this project, the Sonarr team changed the status of that ticket to "Open" and said it should be fixed in V5.
 
 The silly acronym stands for "Sonarr Wait Until Release App\[lication]."
 
 ## How It Works
 
-swurApp connects to the Sonarr API and unmonitors all episodes for the latest season of a show that haven't aired yet. It periodically checks if any episodes have aired, and then switches them to monitored, allowing Sonarr to grab releases for them.
+swurApp connects to the Sonarr API and unmonitors all episodes for the latest season of a show that haven't aired yet. It periodically checks if any episodes have aired, and then switches them to monitored, allowing Sonarr to grab releases
+for them.
 The next time Sonarr grabs episodes, the newly-monitored episodes will be picked up, and the unmonitored ones will be ignored, ensuring you don't grab any before air date.
 
 <table>
@@ -36,12 +37,13 @@ The next time Sonarr grabs episodes, the newly-monitored episodes will be picked
 
 - A Sonarr instance (duh)
 - Either of the following:
-  - Docker (including Docker Compose)
-  - python3 and git
+    - Docker (including Docker Compose)
+    - python3 and git
 
 ## Installation
 
-- (Recommended) Tag series you don't want to track with the "`ignore`" tag. Use this for series that air early, or series that you don't want to grab all aired episodes for. You can also just unmonitor the latest season of shows you don't want to track.
+- (Recommended) Tag series you don't want to track with the "`ignore`" tag. Use this for series that air early, or series that you don't want to grab all aired episodes for. You can also just unmonitor the latest season of shows you don't
+  want to track.
 - Get an API key from Sonarr:
     - Click "Settings" on the left menu
     - Click "General" on the left menu bar
@@ -49,21 +51,21 @@ The next time Sonarr grabs episodes, the newly-monitored episodes will be picked
 - Pick one of the following installation methods:
 
 ### Option 1: Docker
+
 ```
 docker run -d \
   -e API_KEY="YOUR_API_KEY" \
   -e BASE_URL="http://sonarr.example" \
-  -e DELAY_IN_MINUTES=60 \
-  -e IGNORE_TAG_NAME="ignore" \
-  -e LOG_LEVEL="DEBUG" \
   --restart unless-stopped \
   docker.io/owlcaribou/swurapp:latest
 ```
 
 ### Option 2: Docker Compose
+
 - Download or copy the [docker-compose.yml](https://github.com/OwlCaribou/swurApp/blob/main/docker-compose.yml) file from the repository and fill in the required variables.
 
 ### Option 3: Python and cron
+
 - Clone this repo ( `git clone https://github.com/OwlCaribou/swurApp` )
 - Run swurApp every hour/day/etc. For example, to run in crontab every hour at the top of the hour:
     - `0 * * * * /usr/bin/env python3 /path/to/swurApp/swur.py --api-key YOUR_API_KEY --base-url http://sonarr.example.com`
@@ -71,14 +73,13 @@ docker run -d \
 
 ## Parameters
 
-| Python Parameter    | Docker Environment Variable | Required | Description                                                                                                                                                                                        | Default  |
-|---------------------|-----------------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
-| `--api-key`         | API_KEY                     | Yes      | The API key used to authenticate requests with the Sonarr instance. Get this under "Settings" -> "General" -> "API Key"                                                                            | None     |
-| `--base-url`        | BASE_URL                    | Yes      | The full base URL of your Sonarr server, including scheme (`http/https`), host, and port. For example: "`http://192.168.1.1:8989`" or "`https://sonarr.example.com`" | None     |
-| N/A                 | DELAY_IN_MINUTES            | Yes      | How often to monitor and unmonitor episodes, in minutes                                                                                                                                            | 60       |
-| `--ignore-tag-name` | IGNORE_TAG_NAME             | No       | The tag name for series that should not be processed by swurApp                                                                                                                                    | `ignore` |
-| `--log-level`       | LOG_LEVEL                   | No       | The level to which to set the logging to (DEBUG, INFO, WARNING, ERROR, CRITICAL)                                                                                                                   | INFO     |
-
+| Python Parameter    | Docker Environment Variable | Required | Description                                                                                                                                                                         | Default  |
+|---------------------|-----------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+| `--api-key`         | API_KEY                     | Yes      | The API key used to authenticate requests with the Sonarr instance. Get this under "Settings" -> "General" -> "API Key"                                                             | None     |
+| `--base-url`        | BASE_URL                    | Yes      | The full base URL of your Sonarr server, including scheme (`http/https`), host, and port. For example: "`http://192.168.1.1:8989`" or "`https://sonarr.example.com`"                | None     |
+| N/A                 | CHECK_INTERVAL              | No       | How often to monitor and unmonitor episodes, in minutes. The deprecated `DELAY_IN_MINUTES` is still accepted for legacy setups if this is not set, but it is recommended to switch. | 60       |
+| `--ignore-tag-name` | IGNORE_TAG_NAME             | No       | The tag name for series that should not be processed by swurApp                                                                                                                     | `ignore` |
+| `--log-level`       | LOG_LEVEL                   | No       | The level to which to set the logging to (DEBUG, INFO, WARNING, ERROR, CRITICAL)                                                                                                    | INFO     |
 
 ## Limitations
 
@@ -90,8 +91,9 @@ docker run -d \
 
 #### Q: Are you sure this feature doesn't exist in Sonarr?
 
-- The "Minimum Availability" feature exists only in Radarr, so that may be what you're thinking of. 
-- Delay profiles only delay based on the file age, not the episode air date. If you set a delay profile to 5 hours and a file comes out a week before air date, Sonarr will grab the file after 5 hours. We want to wait 5 hours after _air_ date, not 5 hours after the malicious/fake file is seeded.
+- The "Minimum Availability" feature exists only in Radarr, so that may be what you're thinking of.
+- Delay profiles only delay based on the file age, not the episode air date. If you set a delay profile to 5 hours and a file comes out a week before air date, Sonarr will grab the file after 5 hours. We want to wait 5 hours after _air_
+  date, not 5 hours after the malicious/fake file is seeded.
 - The "Minimum Age" feature has the same problem. Plus it's for Usenet only, anyway.
 - The "Fail Downloads" option helps, but doesn't work if the file is intentionally mislabelled (ie because it is still a video file, just the wrong one), as opposed to malware.
 
@@ -101,7 +103,7 @@ docker run -d \
 
 #### Q: Why not just contribute this directly to Sonarr?
 
-- I'd love to! But they have rejected the proposal for such a feature in the past, though it may have been picked up recently: https://github.com/Sonarr/Sonarr/issues/969 
+- I'd love to! But they have rejected the proposal for such a feature in the past, though it may have been picked up recently: https://github.com/Sonarr/Sonarr/issues/969
 
 ## Special Thanks
 
