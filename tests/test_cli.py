@@ -79,7 +79,7 @@ def test_describe_config_excludes_sensitive_values(monkeypatch):
 
     description = swur.describe_config(args)
 
-    assert description == "ignore_tag_name=skip, log_level=INFO, wait_until_end=False, extra_delay=-15"
+    assert description == "ignore_tag_name=skip, wait_until_end=False, extra_delay=-15"
     assert "secret" not in description
 
 

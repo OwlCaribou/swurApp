@@ -212,13 +212,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 # Only these arguments are logged at startup. Anything not listed (e.g. the API key and base URL) is treated as sensitive
-LOGGED_ARGS = ["ignore_tag_name", "log_level", "wait_until_end", "extra_delay"]
+LOGGED_ARGS = ["ignore_tag_name", "wait_until_end", "extra_delay"]
 
 
 def describe_config(args: argparse.Namespace) -> str:
-    values = {name: getattr(args, name) for name in LOGGED_ARGS}
-    values["log_level"] = logging.getLevelName(values["log_level"])
-    return ", ".join(f"{name}={value}" for name, value in values.items())
+    return ", ".join(f"{name}={getattr(args, name)}" for name in LOGGED_ARGS)
 
 
 def main(argv: List[str] | None = None) -> None:
