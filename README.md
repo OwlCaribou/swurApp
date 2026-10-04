@@ -12,9 +12,7 @@ The silly acronym stands for "Sonarr Wait Until Release App\[lication]."
 
 ## How It Works
 
-swurApp connects to the Sonarr API and unmonitors all episodes for the latest season of a show that haven't aired yet. It periodically checks if any episodes have aired (by default, once the air date plus the episode's runtime has passed,
-plus any `EXTRA_DELAY`), and then switches them to monitored, allowing Sonarr to grab releases
-for them.
+swurApp connects to the Sonarr API and unmonitors all episodes for the latest season of a show that haven't aired yet. It periodically checks if any episodes have aired, and then switches them to monitored, allowing Sonarr to grab releases for them.
 The next time Sonarr grabs episodes, the newly-monitored episodes will be picked up, and the unmonitored ones will be ignored, ensuring you don't grab any before air date.
 
 <table>
@@ -40,8 +38,7 @@ The next time Sonarr grabs episodes, the newly-monitored episodes will be picked
 
 ## Installation
 
-- (Recommended) Tag series you don't want to track with the "`ignore`" tag. Use this for series that air early, or series that you don't want to grab all aired episodes for. You can also just unmonitor the latest season of shows you don't
-  want to track.
+- (Recommended) Tag series you don't want to track with the "`ignore`" tag. Use this for series that air early, or series that you don't want to grab all aired episodes for. You can also just unmonitor the latest season of shows you don't want to track.
 - Get an API key from Sonarr:
     - Click "Settings" on the left menu
     - Click "General" on the left menu bar
@@ -85,9 +82,9 @@ All values are checked at startup. If any is invalid, swurApp exits immediately 
 
 ## Limitations
 
-- Only works for the latest season. This should be fine unless a series comes out with a new season very quickly after an old one ends. That's why it's important not to run this script too infrequently.
-- If a monitored series does come out early, and you run swurApp, you won't get those episodes early. Just toggle them to "monitored" or manually download them to work around this.
-- `WAIT_UNTIL_END` relies on the runtime reported by Sonarr. If the episode has no runtime, the series runtime is used; if neither is known, the episode is monitored at its air date.
+- Only works for the latest season. This should be fine unless a series comes out with a new season very quickly after an old one ends, or there is a midseason renewal.
+- If a monitored series does come out early, you won't get those episodes early. Just toggle them to "monitored" or manually download them to work around this.
+- `WAIT_UNTIL_END` relies on the runtime reported by Sonarr. If the episode has no runtime, the series runtime is used; if neither is known, the episode is monitored at its air date. Sonarr v4 or higher is required to use this flag.
 - A negative `EXTRA_DELAY` can monitor an episode before it airs (or before it finishes airing), which reintroduces the risk of grabbing fake pre-release files.
 - swurApp monitors _all_ episodes in the latest season that have aired. That means if you intentionally skipped an episode, it will be picked up again. So this application would not work well for sports programs or talk shows, for example.
 
