@@ -2,15 +2,18 @@ name: Python Tests
 
 on:
   workflow_call:
+  workflow_dispatch:
   push:
     paths:
       - '**.py'
       - 'requirements.txt'
+      - 'Dockerfile'
       - '.github/workflows/tests.yml'
   pull_request:
     paths:
       - '**.py'
       - 'requirements.txt'
+      - 'Dockerfile'
       - '.github/workflows/tests.yml'
 
 jobs:
