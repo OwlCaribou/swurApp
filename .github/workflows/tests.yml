@@ -2,6 +2,12 @@ name: Python Tests
 
 on:
   workflow_call:
+    inputs:
+      ref:
+        description: Branch or ref to test. Defaults to the ref that triggered the workflow
+        type: string
+        required: false
+        default: ''
   workflow_dispatch:
   push:
     paths:
@@ -22,6 +28,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v6.2.0
