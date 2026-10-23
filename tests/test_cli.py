@@ -105,3 +105,17 @@ def test_main_passes_arguments_to_app(monkeypatch):
         leave_deleted_unmonitored=True,
     )
     mock_app_class.return_value.run.assert_called_once_with()
+
+
+@pytest.mark.parametrize("args, logged", [
+    (["--leave-deleted-unmonitored", "true"], True),
+    ([], False),
+])
+def test_main_logs_state_file_when_enabled(monkeypatch, caplog, args, logged):
+    monkeypatch.delenv("LOG_LEVEL", raising=False)
+    monkeypatch.setattr(swur, "SwurApp", MagicMock())
+    caplog.set_level(swur.logging.INFO)
+
+    swur.main(REQUIRED_ARGS + args)
+
+    assert (swur.get_state_file() in caplog.text) is logged

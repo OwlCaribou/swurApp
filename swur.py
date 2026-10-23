@@ -284,7 +284,10 @@ def main(argv: List[str] | None = None) -> None:
     args = build_parser().parse_args(argv)
 
     logging.basicConfig(level=args.log_level)
-    logging.getLogger(__name__).info(f"Starting with {describe_config(args)}")
+    logger = logging.getLogger(__name__)
+    logger.info(f"Starting with {describe_config(args)}")
+    if args.leave_deleted_unmonitored:
+        logger.info(f"Storing the last aired episode of each series in \"{get_state_file()}\"")
     app = SwurApp(
         api_key=args.api_key,
         base_url=args.base_url,
