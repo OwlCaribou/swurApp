@@ -25,6 +25,8 @@ REQUIRED_ARGS = ["--api-key", "abcd123", "--base-url", "http://localhost:8989"]
     ([], "log_level", swur.logging.INFO),
     ([], "wait_until_end", True),
     ([], "extra_delay", 0),
+    ([], "leave_deleted_unmonitored", False),
+    (["--leave-deleted-unmonitored", "true"], "leave_deleted_unmonitored", True),
     (["--base-url", "https://sonarr.example.com/"], "base_url", "https://sonarr.example.com/"),
     (["--base-url", "http://192.168.1.1:8989/sonarr"], "base_url", "http://192.168.1.1:8989/sonarr"),
     (["--ignore-tag-name", " skip "], "ignore_tag_name", "skip"),
@@ -50,6 +52,8 @@ def test_build_parser_valid(monkeypatch, args, attr, expected):
     REQUIRED_ARGS + ["--log-level", "verbose"],
     REQUIRED_ARGS + ["--wait-until-end", "maybe"],
     REQUIRED_ARGS + ["--extra-delay", "1.5"],
+    REQUIRED_ARGS + ["--leave-deleted-unmonitored", "maybe"],
+    REQUIRED_ARGS + ["--state-file", "/tmp/state.json"],  # Not configurable
 ])
 def test_build_parser_invalid(monkeypatch, args):
     monkeypatch.delenv("LOG_LEVEL", raising=False)
@@ -75,11 +79,12 @@ def test_describe_config_excludes_sensitive_values(monkeypatch):
     args = swur.build_parser().parse_args([
         "--api-key", "secret-key", "--base-url", "http://secret-host:8989",
         "--ignore-tag-name", "skip", "--wait-until-end", "false", "--extra-delay", "-15",
+        "--leave-deleted-unmonitored", "true",
     ])
 
     description = swur.describe_config(args)
 
-    assert description == "ignore_tag_name=skip, wait_until_end=False, extra_delay=-15"
+    assert description == "ignore_tag_name=skip, wait_until_end=False, extra_delay=-15, leave_deleted_unmonitored=True"
     assert "secret" not in description
 
 
@@ -88,7 +93,8 @@ def test_main_passes_arguments_to_app(monkeypatch):
     mock_app_class = MagicMock()
     monkeypatch.setattr(swur, "SwurApp", mock_app_class)
 
-    swur.main(REQUIRED_ARGS + ["--ignore-tag-name", "skip", "--wait-until-end", "false", "--extra-delay", "15"])
+    swur.main(REQUIRED_ARGS + ["--ignore-tag-name", "skip", "--wait-until-end", "false", "--extra-delay", "15",
+                              "--leave-deleted-unmonitored", "true"])
 
     mock_app_class.assert_called_once_with(
         api_key="abcd123",
@@ -96,5 +102,6 @@ def test_main_passes_arguments_to_app(monkeypatch):
         tag_name="skip",
         wait_until_end=False,
         extra_delay=15,
+        leave_deleted_unmonitored=True,
     )
     mock_app_class.return_value.run.assert_called_once_with()

@@ -1,6 +1,6 @@
 import argparse
 from dataclasses import dataclass
-from typing import List
+from typing import Dict, List, Tuple
 from datetime import datetime, timedelta, timezone
 import logging
 import json
@@ -10,6 +10,11 @@ import urllib.parse
 from sonarr_client import SonarrClient
 
 AIR_DATE_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+DOCKER_STATE_FILE = "/config/state.json"
+SCRIPT_STATE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "state.json")
+# Keys for the last aired episode of each series in the state file, kept short since there is one entry per series
+STATE_SEASON_KEY = "s"
+STATE_EPISODE_KEY = "e"
 
 
 @dataclass
@@ -25,15 +30,53 @@ class Episode:
     has_aired: bool
     is_monitored: bool
     title: str
+    season_number: int = 0
+    episode_number: int = 0
+
+    @property
+    def number(self) -> Tuple[int, int]:
+        return self.season_number, self.episode_number
+
+
+def get_state_file() -> str:
+    # The Docker image sets SWUR_DOCKER so the state lands in the /config volume instead of next to the script
+    return DOCKER_STATE_FILE if os.getenv("SWUR_DOCKER") else SCRIPT_STATE_FILE
+
+
+def load_last_aired(path: str) -> Dict[int, Tuple[int, int]]:
+    logger = logging.getLogger(__name__)
+    try:
+        with open(path) as file:
+            raw = json.load(file)
+        return {int(series_id): (int(last[STATE_SEASON_KEY]), int(last[STATE_EPISODE_KEY])) for series_id, last in raw.items()}
+    except FileNotFoundError:
+        logger.info(f"No state file found at \"{path}\". All aired episodes will be monitored this run.")
+    except (OSError, ValueError, AttributeError, TypeError, KeyError) as e:
+        logger.warning(f"Could not read state file \"{path}\", ignoring it: {e}")
+    return {}
+
+
+def save_last_aired(path: str, last_aired: Dict[int, Tuple[int, int]]) -> None:
+    raw = {str(series_id): {STATE_SEASON_KEY: season, STATE_EPISODE_KEY: episode}
+           for series_id, (season, episode) in sorted(last_aired.items())}
+
+    # Write to a temporary file first so a crash mid-write can't corrupt the state
+    tmp_path = f"{path}.tmp"
+    with open(tmp_path, "w") as file:
+        json.dump(raw, file, indent=2)
+    os.replace(tmp_path, path)
 
 
 class SwurApp:
-    def __init__(self, api_key, base_url, tag_name, wait_until_end=True, extra_delay=0):
+    def __init__(self, api_key, base_url, tag_name, wait_until_end=True, extra_delay=0,
+                 leave_deleted_unmonitored=False):
         self.logger = logging.getLogger(__name__)
         self.sonarr_client = SonarrClient(base_url, api_key)
         self.tag_name = tag_name
         self.wait_until_end = wait_until_end
         self.extra_delay = extra_delay
+        self.leave_deleted_unmonitored = leave_deleted_unmonitored
+        self.state_file = get_state_file()
 
     def run(self) -> None:
         ignore_tag_id = self.get_tag_id()
@@ -86,12 +129,22 @@ class SwurApp:
     def track_episodes(self, tracked_series_ids: List[Series]) -> None:
         episodes_to_monitor = []
         episodes_to_unmonitor = []
+        last_aired = load_last_aired(self.state_file) if self.leave_deleted_unmonitored else {}
+        new_last_aired = dict(last_aired)
 
         for series in tracked_series_ids:
             episodes = self.get_episodes_for_series(series.id, series.latest_season, series.runtime)
+            series_last_aired = last_aired.get(series.id)
 
             for episode in episodes:
+                if self.leave_deleted_unmonitored and episode.has_aired:
+                    new_last_aired[series.id] = max(new_last_aired.get(series.id, episode.number), episode.number)
+
                 if episode.has_aired and not episode.is_monitored:
+                    # Episodes up to the last aired one were monitored on an earlier run, so they were likely deleted since
+                    if series_last_aired is not None and episode.number <= series_last_aired:
+                        self.logger.debug(f"Leaving episode \"{episode.title}\" unmonitored, it had already aired on an earlier run")
+                        continue
                     episodes_to_monitor.append(episode)
                 elif not episode.has_aired and episode.is_monitored:
                     episodes_to_unmonitor.append(episode)
@@ -107,6 +160,10 @@ class SwurApp:
 
         if not episodes_to_unmonitor and not episodes_to_monitor:
             self.logger.info("No new episodes to un/monitor")
+
+        # Only save once all API calls succeeded, so a failed run is retried instead of skipping episodes
+        if self.leave_deleted_unmonitored:
+            save_last_aired(self.state_file, new_last_aired)
 
     def monitor_episodes(self, episodes: List[Episode], should_monitor: bool) -> None:
         episode_ids = [episode.id for episode in episodes]
@@ -148,6 +205,8 @@ class SwurApp:
                     title=episode["title"],
                     has_aired=aired_at < now,
                     is_monitored=episode["monitored"],
+                    season_number=episode.get("seasonNumber", season),
+                    episode_number=episode.get("episodeNumber", 0),
                 ))
 
         return episodes
@@ -208,11 +267,13 @@ def build_parser() -> argparse.ArgumentParser:
                         help="(Optional) Wait until an episode has finished airing (air date + runtime) before monitoring it. \"True\" by default.")
     parser.add_argument("--extra-delay", type=int, default="0",
                         help="(Optional) Additional minutes to wait before monitoring an episode, on top of the air date (and runtime, if --wait-until-end is enabled). May be negative to monitor episodes earlier. 0 by default.")
+    parser.add_argument("--leave-deleted-unmonitored", type=_parse_bool, default="False",
+                        help="(Optional) Only monitor episodes that come after the last aired episode seen on an earlier run. Use if you delete episodes after watching. The last aired episode of each series is stored in state.json next to swur.py. \"False\" by default.")
     return parser
 
 
 # Only these arguments are logged at startup. Anything not listed (e.g. the API key and base URL) is treated as sensitive
-LOGGED_ARGS = ["ignore_tag_name", "wait_until_end", "extra_delay"]
+LOGGED_ARGS = ["ignore_tag_name", "wait_until_end", "extra_delay", "leave_deleted_unmonitored"]
 
 
 def describe_config(args: argparse.Namespace) -> str:
@@ -230,6 +291,7 @@ def main(argv: List[str] | None = None) -> None:
         tag_name=args.ignore_tag_name,
         wait_until_end=args.wait_until_end,
         extra_delay=args.extra_delay,
+        leave_deleted_unmonitored=args.leave_deleted_unmonitored,
     )
     app.run()
 

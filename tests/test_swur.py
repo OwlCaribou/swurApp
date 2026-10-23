@@ -1,6 +1,7 @@
 import swur
 import pytest
 import json
+from pathlib import Path
 from unittest.mock import MagicMock
 from swur import SwurApp
 from datetime import datetime, timedelta, timezone
@@ -375,3 +376,172 @@ def test_run_passes_results_between_steps(app):
 
     app.get_tracked_series_ids.assert_called_once_with(7)
     app.track_episodes.assert_called_once_with(["series"])
+
+
+def test_get_episodes_for_series_sets_episode_number(app):
+    app.sonarr_client.call_endpoint.return_value = _episodes_response([
+        {"id": 101, "title": "Episode", "airDateUtc": "2026-01-01T20:00:00Z", "monitored": False,
+         "seasonNumber": 2, "episodeNumber": 5},
+    ])
+
+    episodes = app.get_episodes_for_series(series_id=10, season=2)
+
+    assert episodes[0].number == (2, 5)
+
+
+@pytest.mark.parametrize("docker_env, expected", [
+    (None, swur.SCRIPT_STATE_FILE),
+    ("true", "/config/state.json"),
+])
+def test_state_file_location(monkeypatch, docker_env, expected):
+    if docker_env is None:
+        monkeypatch.delenv("SWUR_DOCKER", raising=False)
+    else:
+        monkeypatch.setenv("SWUR_DOCKER", docker_env)
+
+    assert swur.get_state_file() == expected
+    assert SwurApp(api_key="abcd123", base_url="http://localhost:8989", tag_name="ignore").state_file == expected
+
+
+def test_script_state_file_is_next_to_script():
+    assert swur.SCRIPT_STATE_FILE == str(Path(swur.__file__).resolve().parent / "state.json")
+
+
+def test_leave_deleted_unmonitored_is_disabled_by_default():
+    assert SwurApp(api_key="abcd123", base_url="http://localhost:8989", tag_name="ignore").leave_deleted_unmonitored is False
+
+
+
+
+def _aired_episode(season, number, monitored=False, aired=True):
+    return swur.Episode(id=number, title=f"S{season}E{number}", has_aired=aired, is_monitored=monitored,
+                        season_number=season, episode_number=number)
+
+
+@pytest.mark.parametrize("flag, state, episode, should_monitor", [
+    # No entry for the series yet, so behave as before
+    (True, {}, (2, 1), True),
+    (True, {99: (2, 9)}, (2, 1), True),
+    # Aired after the last aired episode
+    (True, {1: (2, 5)}, (2, 6), True),
+    (True, {1: (1, 10)}, (2, 1), True),
+    # The last aired episode or earlier, so it was monitored then and likely deleted since
+    (True, {1: (2, 5)}, (2, 5), False),
+    (True, {1: (2, 5)}, (2, 4), False),
+    (True, {1: (3, 1)}, (2, 8), False),
+    # Flag disabled ignores the state file
+    (False, {1: (2, 5)}, (2, 1), True),
+])
+def test_track_episodes_leave_deleted_unmonitored(app, tmp_path, flag, state, episode, should_monitor):
+    state_file = tmp_path / "state.json"
+    swur.save_last_aired(str(state_file), state)
+    app.leave_deleted_unmonitored = flag
+    app.state_file = str(state_file)
+    aired = _aired_episode(*episode)
+    app.get_episodes_for_series = MagicMock(return_value=[aired])
+    app.monitor_episodes = MagicMock()
+
+    app.track_episodes([swur.Series(id=1, latest_season=episode[0])])
+
+    if should_monitor:
+        app.monitor_episodes.assert_called_once_with([aired], True)
+    else:
+        app.monitor_episodes.assert_not_called()
+
+
+def test_track_episodes_saves_last_aired(app, tmp_path):
+    state_file = tmp_path / "state.json"
+    swur.save_last_aired(str(state_file), {1: (2, 1), 3: (1, 9), 99: (4, 4)})
+    app.leave_deleted_unmonitored = True
+    app.state_file = str(state_file)
+    episodes_by_series = {
+        # Latest aired episode moves forward, unaired episodes don't count
+        1: [_aired_episode(2, 1, monitored=True), _aired_episode(2, 3), _aired_episode(2, 4, aired=False)],
+        # No aired episodes yet, so no entry
+        2: [_aired_episode(1, 1, aired=False)],
+        # Never moves backwards, e.g. if an episode was removed from Sonarr
+        3: [_aired_episode(1, 2, monitored=True)],
+    }
+    app.get_episodes_for_series = MagicMock(side_effect=lambda series_id, *args: episodes_by_series[series_id])
+    app.monitor_episodes = MagicMock()
+
+    app.track_episodes([swur.Series(id=1, latest_season=2), swur.Series(id=2, latest_season=1),
+                        swur.Series(id=3, latest_season=1)])
+
+    assert swur.load_last_aired(str(state_file)) == {1: (2, 3), 3: (1, 9), 99: (4, 4)}
+    assert not (tmp_path / "state.json.tmp").exists()
+
+
+def test_track_episodes_next_run_skips_previously_aired(app, tmp_path):
+    app.leave_deleted_unmonitored = True
+    app.state_file = str(tmp_path / "state.json")
+    app.monitor_episodes = MagicMock()
+    old_episode = {"id": 101, "title": "Old", "airDateUtc": "2020-01-01T00:00:00Z", "seasonNumber": 1, "episodeNumber": 1}
+    app.sonarr_client.call_endpoint.return_value = _episodes_response([{**old_episode, "monitored": True}])
+    app.track_episodes([swur.Series(id=1, latest_season=1)])
+
+    # The user deletes the episode and Sonarr unmonitors it
+    app.sonarr_client.call_endpoint.return_value = _episodes_response([{**old_episode, "monitored": False}])
+    app.track_episodes([swur.Series(id=1, latest_season=1)])
+
+    app.monitor_episodes.assert_not_called()
+
+
+def test_track_episodes_monitors_after_delay_change(app, tmp_path):
+    app.leave_deleted_unmonitored = True
+    app.state_file = str(tmp_path / "state.json")
+    app.monitor_episodes = MagicMock()
+    air_date = (datetime.now(timezone.utc) - timedelta(minutes=30)).strftime(swur.AIR_DATE_FORMAT)
+    episode = {"id": 102, "title": "New", "airDateUtc": air_date, "seasonNumber": 1, "episodeNumber": 2, "monitored": False}
+    app.sonarr_client.call_endpoint.return_value = _episodes_response([episode])
+
+    # Not aired yet with a long delay, then aired once the delay is lowered
+    app.extra_delay = 60
+    app.track_episodes([swur.Series(id=1, latest_season=1)])
+    app.extra_delay = 0
+    app.track_episodes([swur.Series(id=1, latest_season=1)])
+
+    app.monitor_episodes.assert_called_once()
+    assert app.monitor_episodes.call_args.args[0][0].id == 102
+
+
+def test_track_episodes_does_not_save_when_disabled(app, tmp_path):
+    app.state_file = str(tmp_path / "state.json")
+    app.get_episodes_for_series = MagicMock(return_value=[_aired_episode(1, 1, monitored=True)])
+
+    app.track_episodes([swur.Series(id=1, latest_season=1)])
+
+    assert not (tmp_path / "state.json").exists()
+
+
+def test_track_episodes_does_not_save_when_api_fails(app, tmp_path):
+    app.leave_deleted_unmonitored = True
+    app.state_file = str(tmp_path / "state.json")
+    app.get_episodes_for_series = MagicMock(return_value=[_aired_episode(1, 1)])
+    app.monitor_episodes = MagicMock(side_effect=Exception("API down"))
+
+    with pytest.raises(Exception):
+        app.track_episodes([swur.Series(id=1, latest_season=1)])
+
+    assert not (tmp_path / "state.json").exists()
+
+
+@pytest.mark.parametrize("contents", [
+    None, "", "not json", "[]", '{"1": "2026-01-01T00:00:00Z"}', '{"1": {"s": 1}}', '{"1": {"season": 1, "episode": 2}}', '{"abc": {"s": 1, "e": 2}}',
+])
+def test_load_last_aired_missing_or_invalid_is_empty(tmp_path, contents):
+    state_file = tmp_path / "state.json"
+    if contents is not None:
+        state_file.write_text(contents)
+
+    assert swur.load_last_aired(str(state_file)) == {}
+
+
+def test_save_and_load_last_aired_round_trip(tmp_path):
+    state_file = tmp_path / "state.json"
+    state = {12: (2, 5)}
+
+    swur.save_last_aired(str(state_file), state)
+
+    assert json.loads(state_file.read_text()) == {"12": {"s": 2, "e": 5}}
+    assert swur.load_last_aired(str(state_file)) == state

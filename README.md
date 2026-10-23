@@ -12,7 +12,8 @@ The silly acronym stands for "Sonarr Wait Until Release App\[lication]."
 
 ## How It Works
 
-swurApp connects to the Sonarr API and unmonitors all episodes for the latest season of a show that haven't aired yet. It periodically checks if any episodes have aired, and then switches them to monitored, allowing Sonarr to grab releases for them.
+swurApp connects to the Sonarr API and unmonitors all episodes for the latest season of a show that haven't aired yet. It periodically checks if any episodes have aired, and then switches them to monitored, allowing Sonarr to grab releases
+for them.
 The next time Sonarr grabs episodes, the newly-monitored episodes will be picked up, and the unmonitored ones will be ignored, ensuring you don't grab any before air date.
 
 <table>
@@ -38,7 +39,8 @@ The next time Sonarr grabs episodes, the newly-monitored episodes will be picked
 
 ## Installation
 
-- (Recommended) Tag series you don't want to track with the "`ignore`" tag. Use this for series that air early, or series that you don't want to grab all aired episodes for. You can also just unmonitor the latest season of shows you don't want to track.
+- (Recommended) Tag series you don't want to track with the "`ignore`" tag. Use this for series that air early, or series that you don't want to grab all aired episodes for. You can also just unmonitor the latest season of shows you don't
+  want to track.
 - Get an API key from Sonarr:
     - Click "Settings" on the left menu
     - Click "General" on the left menu bar
@@ -51,6 +53,7 @@ The next time Sonarr grabs episodes, the newly-monitored episodes will be picked
 docker run -d \
   -e API_KEY="YOUR_API_KEY" \
   -e BASE_URL="http://sonarr.example" \
+  -v swurapp-config:/config \
   --restart unless-stopped \
   docker.io/owlcaribou/swurapp:latest
 ```
@@ -58,6 +61,8 @@ docker run -d \
 ### Option 2: Docker Compose
 
 - Download or copy the [docker-compose.yml](https://github.com/OwlCaribou/swurApp/blob/main/docker-compose.yml) file from the repository and fill in the required variables.
+
+In both Docker options, `/config` holds `state.json`, used by `LEAVE_DELETED_UNMONITORED`. Keep it mounted so the file survives container restarts and image updates.
 
 ### Option 3: Python and cron
 
@@ -68,15 +73,18 @@ docker run -d \
 
 ## Parameters
 
-| Python Parameter    | Docker Environment Variable | Required | Description                                                                                                                                                                                                                                                                                  | Default  |
-|---------------------|-----------------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
-| `--api-key`         | API_KEY                     | Yes      | The API key used to authenticate requests with the Sonarr instance. Get this under "Settings" -> "General" -> "API Key"                                                                                                                                                                      | None     |
-| `--base-url`        | BASE_URL                    | Yes      | The full base URL of your Sonarr server, including scheme (`http/https`), host, and port. For example: "`http://192.168.1.1:8989`" or "`https://sonarr.example.com`"                                                                                                                         | None     |
-| N/A                 | CHECK_INTERVAL              | No       | How often to monitor and unmonitor episodes, in minutes. The deprecated `DELAY_IN_MINUTES` is still accepted for legacy setups if this is not set, but it is recommended to switch.                                                                                                          | 60       |
-| `--extra-delay`     | EXTRA_DELAY                 | No       | Additional minutes to wait before monitoring an episode. Added on top of the air date, or the air date + runtime when `WAIT_UNTIL_END` is `True`. Can be negative to monitor episodes earlier, e.g. `-10` with `WAIT_UNTIL_END=True` monitors 10 minutes before the episode finishes airing. | `0`      |
-| `--ignore-tag-name` | IGNORE_TAG_NAME             | No       | The tag name for series that should not be processed by swurApp                                                                                                                                                                                                                              | `ignore` |
-| `--log-level`       | LOG_LEVEL                   | No       | The level to which to set the logging to (DEBUG, INFO, WARNING, ERROR, CRITICAL)                                                                                                                                                                                                             | INFO     |
-| `--wait-until-end`  | WAIT_UNTIL_END              | No       | Wait until an episode has finished airing (air date + runtime) before monitoring it. Set to `False` to monitor as soon as the episode starts airing.                                                                                                                                         | `True`   |
+| Python Parameter              | Docker Environment Variable | Required | Description                                                                                                                                                                                                                                                                                                                                                                   | Default  |
+|-------------------------------|-----------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+| `--api-key`                   | API_KEY                     | Yes      | The API key used to authenticate requests with the Sonarr instance. Get this under "Settings" -> "General" -> "API Key"                                                                                                                                                                                                                                                       | None     |
+| `--base-url`                  | BASE_URL                    | Yes      | The full base URL of your Sonarr server, including scheme (`http/https`), host, and port. For example: "`http://192.168.1.1:8989`" or "`https://sonarr.example.com`"                                                                                                                                                                                                          | None     |
+| N/A                           | CHECK_INTERVAL              | No       | How often to monitor and unmonitor episodes, in minutes. The deprecated `DELAY_IN_MINUTES` is still accepted for legacy setups if this is not set, but it is recommended to switch.                                                                                                                                                                                           | 60       |
+| `--extra-delay`               | EXTRA_DELAY                 | No       | Additional minutes to wait before monitoring an episode. Added on top of the air date, or the air date + runtime when `WAIT_UNTIL_END` is `True`. Can be negative to monitor episodes earlier, e.g. `-10` with `WAIT_UNTIL_END=True` monitors 10 minutes before the episode finishes airing.                                                                                  | `0`      |
+| `--ignore-tag-name`           | IGNORE_TAG_NAME             | No       | The tag name for series that should not be processed by swurApp                                                                                                                                                                                                                                                                                                               | `ignore` |
+| `--leave-deleted-unmonitored` | LEAVE_DELETED_UNMONITORED   | No       | Only monitor episodes that come after the last aired episode seen on an earlier run. Use this if you delete episodes after watching them: Sonarr can unmonitor deleted episodes, and without this flag swurApp would monitor them again and they would be re-downloaded.                                                                                                                  | `False`  |
+| `--wait-until-end`            | WAIT_UNTIL_END              | No       | Wait until an episode has finished airing (air date + runtime) before monitoring it. Set to `False` to monitor as soon as the episode starts airing.                                                                                                                                                                                                                          | `True`   |
+| `--log-level`                 | LOG_LEVEL                   | No       | The level to which to set the logging to (DEBUG, INFO, WARNING, ERROR, CRITICAL)                                                                                                                                                                                                                                                                                              | INFO     |
+
+`LEAVE_DELETED_UNMONITORED` stores the latest aired episode (season and episode number) of each series in `state.json`, next to `swur.py` (or `/config/state.json` in Docker). Aired episodes up to and including that one are left as they are.
 
 All values are checked at startup. If any is invalid, swurApp exits immediately with an error explaining which one (in Docker, the container stops instead of retrying every `CHECK_INTERVAL`).
 
@@ -86,7 +94,10 @@ All values are checked at startup. If any is invalid, swurApp exits immediately 
 - If a monitored series does come out early, you won't get those episodes early. Just toggle them to "monitored" or manually download them to work around this.
 - `WAIT_UNTIL_END` relies on the runtime reported by Sonarr. If the episode has no runtime, the series runtime is used; if neither is known, the episode is monitored at its air date. Sonarr v4 or higher is required to use this flag.
 - A negative `EXTRA_DELAY` can monitor an episode before it airs (or before it finishes airing), which reintroduces the risk of grabbing fake pre-release files.
-- swurApp monitors _all_ episodes in the latest season that have aired. That means if you intentionally skipped an episode, it will be picked up again. So this application would not work well for sports programs or talk shows, for example.
+- By default, swurApp monitors _all_ episodes in the latest season that have aired. That means if you intentionally skipped or deleted an episode, it will be picked up again. Set `LEAVE_DELETED_UNMONITORED=True` to only monitor episodes 
+that come after the last aired episode monitored by swurApp.
+- With `LEAVE_DELETED_UNMONITORED`, the first run (and the first run for a newly tracked series) still monitors every aired episode, since there is no last aired episode stored yet. Episodes you deleted before then may be downloaded again once.
+- With `LEAVE_DELETED_UNMONITORED`, episodes that air out of order are a problem: if E05 airs before E04, E04 counts as already handled and won't be monitored automatically.
 
 ## FAQ
 

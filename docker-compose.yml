@@ -14,10 +14,15 @@ services:
       #- WAIT_UNTIL_END=True
       # Additional minutes to wait before monitoring an episode, on top of the air date (and runtime, if WAIT_UNTIL_END is True). Can be negative to monitor episodes earlier
       #- EXTRA_DELAY=0
+      # If you delete episodes after watching, and you do not want swurApp to re-monitor them, set this to True
+      #- LEAVE_DELETED_UNMONITORED=True
       # The log level minimum to enable. Don't change if you don't need it
       #- LOG_LEVEL=INFO
       # Timezone from IANA TZ database (see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List )
       #- TZ=
+    volumes:
+      # Persists state.json, used by LEAVE_DELETED_UNMONITORED
+      - ./config:/config
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
