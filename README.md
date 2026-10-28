@@ -18,6 +18,8 @@ The next time Sonarr grabs episodes, the newly-monitored episodes will be picked
 
 swurApp remembers the latest aired episode (season and episode number) of each series in `state.json`, next to `swur.py` (or `/config/state.json` in Docker). Aired episodes up to and including that one are left as they are, so episodes you delete after watching (which Sonarr can unmonitor) aren't monitored and downloaded again.
 
+The first time swurApp sees a series (including the first run after upgrading, or if `state.json` is lost), it starts from the latest aired episode that is monitored in Sonarr. Aired episodes after it are monitored, since they likely aired while swurApp wasn't running. If no aired episodes are monitored (for example, if you only want future episodes), it starts from the latest aired episode instead, so only episodes that air from then on are monitored.
+
 <table>
 <tr>
 <td style="text-align: center;" width="33%"><b>Before</b><br>
@@ -93,7 +95,8 @@ All values are checked at startup. If any is invalid, swurApp exits immediately 
 - If a monitored series does come out early, you won't get those episodes early. Just toggle them to "monitored" or manually download them to work around this.
 - `WAIT_UNTIL_END` relies on the runtime reported by Sonarr. If the episode has no runtime, the series runtime is used; if neither is known, the episode is monitored at its air date. Sonarr v4 or higher is required to use this flag.
 - A negative `EXTRA_DELAY` can monitor an episode before it airs (or before it finishes airing), which reintroduces the risk of grabbing fake pre-release files.
-- The first run (including the first run after upgrading from a version without `state.json`, and the first run for a newly tracked series) still monitors every aired episode, since there is no last aired episode stored yet. Episodes you deleted before then may be downloaded again once.
+- The first time swurApp sees a series, unmonitored episodes that aired after the latest monitored one are treated as missed and monitored. So if you deleted the most recent episodes before then, they may be downloaded again once.
+- The first time swurApp sees a series with no aired episodes monitored, an episode that aired while swurApp wasn't running is treated as already aired and left unmonitored. Monitor it manually in Sonarr if you want it.
 - Episodes that air out of order are a problem: if E05 airs before E04, E04 counts as already handled and won't be monitored automatically.
 
 ## FAQ

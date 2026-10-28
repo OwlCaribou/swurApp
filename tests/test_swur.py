@@ -179,6 +179,7 @@ def test_track_episodes(app, monkeypatch):
         swur.Episode(id=104, title="Episode 104", has_aired=False, is_monitored=False, season_number=2, episode_number=4),
     ]
 
+    swur.save_last_aired(app.state_file, {1: (2, 0)})
     app.get_episodes_for_series = MagicMock(return_value=mock_episodes)
     app.monitor_episodes = MagicMock()
 
@@ -417,9 +418,9 @@ def _aired_episode(season, number, monitored=False, aired=True):
 
 
 @pytest.mark.parametrize("state, episode, should_monitor", [
-    # No entry for the series yet, so all aired episodes are monitored
-    ({}, (2, 1), True),
-    ({99: (2, 9)}, (2, 1), True),
+    # No entry for the series yet, and nothing aired is monitored, so start after the latest aired episode
+    ({}, (2, 1), False),
+    ({99: (2, 9)}, (2, 1), False),
     # Aired after the last aired episode
     ({1: (2, 5)}, (2, 6), True),
     ({1: (1, 10)}, (2, 1), True),
@@ -448,7 +449,7 @@ def test_track_episodes_saves_last_aired(app, tmp_path):
     episodes_by_series = {
         # Latest aired episode moves forward, unaired episodes don't count
         1: [_aired_episode(2, 1, monitored=True), _aired_episode(2, 3), _aired_episode(2, 4, aired=False)],
-        # No aired episodes yet, so no entry
+        # No aired episodes yet, so start before the first episode
         2: [_aired_episode(1, 1, aired=False)],
         # Never moves backwards, e.g. if an episode was removed from Sonarr
         3: [_aired_episode(1, 2, monitored=True)],
@@ -459,7 +460,7 @@ def test_track_episodes_saves_last_aired(app, tmp_path):
     app.track_episodes([swur.Series(id=1, latest_season=2), swur.Series(id=2, latest_season=1),
                         swur.Series(id=3, latest_season=1)])
 
-    assert swur.load_last_aired(str(state_file)) == {1: (2, 3), 3: (1, 9), 99: (4, 4)}
+    assert swur.load_last_aired(str(state_file)) == {1: (2, 3), 2: (1, 0), 3: (1, 9), 99: (4, 4)}
     assert not (tmp_path / "state.json.tmp").exists()
 
 
@@ -502,13 +503,67 @@ def test_track_episodes_logs_when_state_cannot_be_saved(app, tmp_path, caplog):
 
 
 def test_track_episodes_does_not_save_when_api_fails(app, tmp_path):
-    app.get_episodes_for_series = MagicMock(return_value=[_aired_episode(1, 1)])
+    app.get_episodes_for_series = MagicMock(return_value=[_aired_episode(1, 1, monitored=True, aired=False)])
     app.monitor_episodes = MagicMock(side_effect=Exception("API down"))
 
     with pytest.raises(Exception):
         app.track_episodes([swur.Series(id=1, latest_season=1)])
 
     assert not (tmp_path / "state.json").exists()
+
+
+@pytest.mark.parametrize("episodes, expected", [
+    # Latest aired, monitored episode
+    ([(1, True, True), (2, True, True), (3, True, False)], (2, 2)),
+    # Aired episodes after it are ignored, they likely aired while swurApp wasn't running
+    ([(1, True, True), (2, True, False), (3, True, True), (4, True, False)], (2, 3)),
+    # Monitored future episodes don't count
+    ([(1, True, True), (2, False, True), (3, False, True)], (2, 1)),
+    # Nothing aired is monitored, so start after the latest aired episode
+    ([(1, True, False), (2, True, False), (3, False, True)], (2, 2)),
+    # Nothing aired yet
+    ([(1, False, True), (2, False, False)], (2, 0)),
+    ([], (2, 0)),
+])
+def test_starting_point(episodes, expected):
+    episodes = [_aired_episode(2, number, monitored=monitored, aired=aired) for number, aired, monitored in episodes]
+
+    assert swur.starting_point(episodes, latest_season=2) == expected
+
+
+@pytest.mark.parametrize("episodes, expected_monitored, expected_state", [
+    # E1 deleted (unmonitored), E2-E3 monitored, E4 aired while swurApp wasn't running, E5 in the future
+    ([(1, True, False), (2, True, True), (3, True, True), (4, True, False), (5, False, False)], [4], (1, 4)),
+    # Only future episodes wanted, so E1-E2 stay unmonitored
+    ([(1, True, False), (2, True, False), (3, False, False)], [], (1, 2)),
+])
+def test_track_episodes_first_run(app, episodes, expected_monitored, expected_state):
+    episodes = [_aired_episode(1, number, monitored=monitored, aired=aired) for number, aired, monitored in episodes]
+    app.get_episodes_for_series = MagicMock(return_value=episodes)
+    app.monitor_episodes = MagicMock()
+
+    app.track_episodes([swur.Series(id=1, latest_season=1)])
+
+    monitored = [call.args[0] for call in app.monitor_episodes.call_args_list if call.args[1]]
+    assert [episode.episode_number for episode in (monitored[0] if monitored else [])] == expected_monitored
+    assert swur.load_last_aired(app.state_file) == {1: expected_state}
+
+
+def test_track_episodes_first_run_then_next_episode_airs(app):
+    app.monitor_episodes = MagicMock()
+
+    # Only future episodes wanted: E1 aired and unmonitored, E2 not aired yet
+    app.get_episodes_for_series = MagicMock(return_value=[_aired_episode(1, 1), _aired_episode(1, 2, aired=False)])
+    app.track_episodes([swur.Series(id=1, latest_season=1)])
+    app.monitor_episodes.assert_not_called()
+
+    # E2 airs
+    app.get_episodes_for_series = MagicMock(return_value=[_aired_episode(1, 1), _aired_episode(1, 2)])
+    app.track_episodes([swur.Series(id=1, latest_season=1)])
+
+    app.monitor_episodes.assert_called_once()
+    assert [episode.episode_number for episode in app.monitor_episodes.call_args.args[0]] == [2]
+    assert swur.load_last_aired(app.state_file) == {1: (1, 2)}
 
 
 @pytest.mark.parametrize("contents", [

@@ -43,6 +43,22 @@ def get_state_file() -> str:
     return DOCKER_STATE_FILE if os.getenv("SWUR_DOCKER") else SCRIPT_STATE_FILE
 
 
+def starting_point(episodes: List[Episode], latest_season: int) -> Tuple[int, int]:
+    """Where to start for a series with no state yet, so episodes deleted before the first run aren't monitored again"""
+    aired = [episode for episode in episodes if episode.has_aired]
+
+    # Anything after the latest monitored episode likely aired while swurApp wasn't running, so it still gets monitored
+    monitored = [episode.number for episode in aired if episode.is_monitored]
+    if monitored:
+        return max(monitored)
+
+    # Nothing aired is monitored (e.g. only future episodes are wanted), so only monitor episodes that air from now on
+    if aired:
+        return max(episode.number for episode in aired)
+
+    return latest_season, 0
+
+
 def load_last_aired(path: str) -> Dict[int, Tuple[int, int]]:
     logger = logging.getLogger(__name__)
     try:
@@ -50,7 +66,7 @@ def load_last_aired(path: str) -> Dict[int, Tuple[int, int]]:
             raw = json.load(file)
         return {int(series_id): (int(last[STATE_SEASON_KEY]), int(last[STATE_EPISODE_KEY])) for series_id, last in raw.items()}
     except FileNotFoundError:
-        logger.info(f"No state file found at \"{path}\". All aired episodes will be monitored this run.")
+        logger.info(f"No state file found at \"{path}\". Each series will start from what is monitored in Sonarr.")
     except (OSError, ValueError, AttributeError, TypeError, KeyError) as e:
         logger.warning(f"Could not read state file \"{path}\", ignoring it: {e}")
     return {}
@@ -134,13 +150,21 @@ class SwurApp:
             episodes = self.get_episodes_for_series(series.id, series.latest_season, series.runtime)
             series_last_aired = last_aired.get(series.id)
 
+            if series_last_aired is None:
+                series_last_aired = starting_point(episodes, series.latest_season)
+                season, number = series_last_aired
+                self.logger.info(f"No state for series {series.id}, starting after S{season:02}E{number:02}")
+
+            # Always store an entry, even if nothing has aired yet, so the series isn't seeded again on the next run
+            new_last_aired[series.id] = series_last_aired
+
             for episode in episodes:
                 if episode.has_aired:
-                    new_last_aired[series.id] = max(new_last_aired.get(series.id, episode.number), episode.number)
+                    new_last_aired[series.id] = max(new_last_aired[series.id], episode.number)
 
                 if episode.has_aired and not episode.is_monitored:
                     # Episodes up to the last aired one were monitored on an earlier run, so they were likely deleted since
-                    if series_last_aired is not None and episode.number <= series_last_aired:
+                    if episode.number <= series_last_aired:
                         self.logger.debug(f"Leaving episode \"{episode.title}\" unmonitored, it had already aired on an earlier run")
                         continue
                     episodes_to_monitor.append(episode)
