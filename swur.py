@@ -1,6 +1,6 @@
 import argparse
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta, timezone
 import logging
 import json
@@ -97,7 +97,7 @@ class SwurApp:
         tracked_series_ids = self.get_tracked_series_ids(ignore_tag_id)
         self.track_episodes(tracked_series_ids)
 
-    def get_tag_id(self) -> int:
+    def get_tag_id(self) -> Optional[int]:
         response = self.sonarr_client.call_endpoint("GET", "/tag")
 
         ignored_tag_id = next((item["id"] for item in json.loads(response.read().decode()) if item["label"] == self.tag_name), None)
@@ -107,7 +107,7 @@ class SwurApp:
 
         return ignored_tag_id
 
-    def get_tracked_series_ids(self, ignore_tag_id: int) -> List[Series]:
+    def get_tracked_series_ids(self, ignore_tag_id: Optional[int]) -> List[Series]:
         response = self.sonarr_client.call_endpoint("GET", "/series")
         tracked = []
 
@@ -261,7 +261,7 @@ def _parse_base_url(value: str) -> str:
     stripped = value.strip()
     parsed = urllib.parse.urlparse(stripped)
     try:
-        parsed.port
+        _ = parsed.port
     except ValueError:
         raise argparse.ArgumentTypeError(f"Invalid port in base URL \"{value}\"")
     if parsed.scheme not in ("http", "https") or not parsed.hostname:

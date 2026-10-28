@@ -20,6 +20,8 @@ swurApp remembers the latest aired episode (season and episode number) of each s
 
 The first time swurApp sees a series (including the first run after upgrading, or if `state.json` is lost), it starts from the latest aired episode that is monitored in Sonarr. Aired episodes after it are monitored, since they likely aired while swurApp wasn't running. If no aired episodes are monitored (for example, if you only want future episodes), it starts from the latest aired episode instead, so only episodes that air from then on are monitored.
 
+<!-- GitHub strips style attributes, so width is needed for equal columns -->
+<!--suppress HtmlDeprecatedAttribute -->
 <table>
 <tr>
 <td style="text-align: center;" width="33%"><b>Before</b><br>
