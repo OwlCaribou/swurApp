@@ -38,7 +38,7 @@ coverage.xml
 *.cover
 *.py,cover
 
-# swurApp state (LEAVE_DELETED_UNMONITORED)
+# swurApp state
 /state.json
 /state.json.tmp
 

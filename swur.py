@@ -68,14 +68,12 @@ def save_last_aired(path: str, last_aired: Dict[int, Tuple[int, int]]) -> None:
 
 
 class SwurApp:
-    def __init__(self, api_key, base_url, tag_name, wait_until_end=True, extra_delay=0,
-                 leave_deleted_unmonitored=False):
+    def __init__(self, api_key, base_url, tag_name, wait_until_end=True, extra_delay=0):
         self.logger = logging.getLogger(__name__)
         self.sonarr_client = SonarrClient(base_url, api_key)
         self.tag_name = tag_name
         self.wait_until_end = wait_until_end
         self.extra_delay = extra_delay
-        self.leave_deleted_unmonitored = leave_deleted_unmonitored
         self.state_file = get_state_file()
 
     def run(self) -> None:
@@ -129,7 +127,7 @@ class SwurApp:
     def track_episodes(self, tracked_series_ids: List[Series]) -> None:
         episodes_to_monitor = []
         episodes_to_unmonitor = []
-        last_aired = load_last_aired(self.state_file) if self.leave_deleted_unmonitored else {}
+        last_aired = load_last_aired(self.state_file)
         new_last_aired = dict(last_aired)
 
         for series in tracked_series_ids:
@@ -137,7 +135,7 @@ class SwurApp:
             series_last_aired = last_aired.get(series.id)
 
             for episode in episodes:
-                if self.leave_deleted_unmonitored and episode.has_aired:
+                if episode.has_aired:
                     new_last_aired[series.id] = max(new_last_aired.get(series.id, episode.number), episode.number)
 
                 if episode.has_aired and not episode.is_monitored:
@@ -162,8 +160,10 @@ class SwurApp:
             self.logger.info("No new episodes to un/monitor")
 
         # Only save once all API calls succeeded, so a failed run is retried instead of skipping episodes
-        if self.leave_deleted_unmonitored:
+        try:
             save_last_aired(self.state_file, new_last_aired)
+        except OSError as e:
+            self.logger.error(f"Could not write state file \"{self.state_file}\", deleted episodes may be monitored again: {e}")
 
     def monitor_episodes(self, episodes: List[Episode], should_monitor: bool) -> None:
         episode_ids = [episode.id for episode in episodes]
@@ -267,13 +267,11 @@ def build_parser() -> argparse.ArgumentParser:
                         help="(Optional) Wait until an episode has finished airing (air date + runtime) before monitoring it. \"True\" by default.")
     parser.add_argument("--extra-delay", type=int, default="0",
                         help="(Optional) Additional minutes to wait before monitoring an episode, on top of the air date (and runtime, if --wait-until-end is enabled). May be negative to monitor episodes earlier. 0 by default.")
-    parser.add_argument("--leave-deleted-unmonitored", type=_parse_bool, default="False",
-                        help="(Optional) Only monitor episodes that come after the last aired episode seen on an earlier run. Use if you delete episodes after watching. The last aired episode of each series is stored in state.json next to swur.py. \"False\" by default.")
     return parser
 
 
 # Only these arguments are logged at startup. Anything not listed (e.g. the API key and base URL) is treated as sensitive
-LOGGED_ARGS = ["ignore_tag_name", "wait_until_end", "extra_delay", "leave_deleted_unmonitored"]
+LOGGED_ARGS = ["ignore_tag_name", "wait_until_end", "extra_delay"]
 
 
 def describe_config(args: argparse.Namespace) -> str:
@@ -286,15 +284,13 @@ def main(argv: List[str] | None = None) -> None:
     logging.basicConfig(level=args.log_level)
     logger = logging.getLogger(__name__)
     logger.info(f"Starting with {describe_config(args)}")
-    if args.leave_deleted_unmonitored:
-        logger.info(f"Storing the last aired episode of each series in \"{get_state_file()}\"")
+    logger.info(f"Storing the last aired episode of each series in \"{get_state_file()}\"")
     app = SwurApp(
         api_key=args.api_key,
         base_url=args.base_url,
         tag_name=args.ignore_tag_name,
         wait_until_end=args.wait_until_end,
         extra_delay=args.extra_delay,
-        leave_deleted_unmonitored=args.leave_deleted_unmonitored,
     )
     app.run()
 
