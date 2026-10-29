@@ -18,6 +18,9 @@ services:
       #- LOG_LEVEL=INFO
       # Timezone from IANA TZ database (see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List )
       #- TZ=
+    volumes:
+      # Persists state.json, so episodes you delete aren't monitored again
+      - ./config:/config
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true

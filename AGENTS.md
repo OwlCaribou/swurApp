@@ -36,6 +36,8 @@ Keep these in sync with any parameter changes:
 - `docker-compose.yml` (documents required and optional env vars)
 - `LOGGED_ARGS` in `swur.py` (arguments logged at startup; add new non-sensitive ones, never secrets or URLs)
 
+`SWUR_DOCKER` is set by the `Dockerfile` so `state.json` is stored in `/config` instead of next to `swur.py`. It is internal, not a user parameter: don't add it to the README or `docker-compose.yml`, and don't make the state file location configurable.
+
 ## CI / release
 
 - `.github/workflows/tests.yml` — runs pytest on pushes and PRs that change critical files. Can also be run manually.

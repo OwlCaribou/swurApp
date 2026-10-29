@@ -38,6 +38,10 @@ coverage.xml
 *.cover
 *.py,cover
 
+# swurApp state
+/state.json
+/state.json.tmp
+
 # Pytest
 .pytest_cache/
 
