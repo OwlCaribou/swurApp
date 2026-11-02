@@ -13,14 +13,10 @@ The silly acronym stands for "Sonarr Wait Until Release App\[lication]."
 ## How It Works
 
 swurApp connects to the Sonarr API and unmonitors all episodes for the latest season of a show that haven't aired yet. It periodically checks if any episodes have aired, and then switches them to monitored, allowing Sonarr to grab releases
-for them.
-The next time Sonarr grabs episodes, the newly-monitored episodes will be picked up, and the unmonitored ones will be ignored, ensuring you don't grab any before air date.
+for them. At the same time, any episodes that haven't aired yet are marked as "unmonitored," so Sonarr doesn't try to grab any malicious files that are uploaded as the release before airdate.
 
-swurApp remembers the latest aired episode (season and episode number) of each series in `state.json`, next to `swur.py` (or `/config/state.json` in Docker). Aired episodes up to and including that one are left as they are, so episodes you delete after watching (which Sonarr can unmonitor) aren't monitored and downloaded again.
+swurApp remembers the latest aired episode of each series, so episodes you delete after watching aren't downloaded again.
 
-The first time swurApp sees a series (including the first run after upgrading, or if `state.json` is lost), it starts from the latest aired episode that is monitored in Sonarr. Aired episodes after it are monitored, since they likely aired while swurApp wasn't running. If no aired episodes are monitored (for example, if you only want future episodes), it starts from the latest aired episode instead, so only episodes that air from then on are monitored.
-
-<!-- GitHub strips style attributes, so width is needed for equal columns -->
 <!--suppress HtmlDeprecatedAttribute -->
 <table>
 <tr>
@@ -89,17 +85,15 @@ In both Docker options, `/config` holds `state.json`. Keep it mounted so the fil
 | `--wait-until-end`            | WAIT_UNTIL_END              | No       | Wait until an episode has finished airing (air date + runtime) before monitoring it. Set to `False` to monitor as soon as the episode starts airing.                                                                                                                                                                                                                          | `True`   |
 | `--log-level`                 | LOG_LEVEL                   | No       | The level to which to set the logging to (DEBUG, INFO, WARNING, ERROR, CRITICAL)                                                                                                                                                                                                                                                                                              | INFO     |
 
-All values are checked at startup. If any is invalid, swurApp exits immediately with an error explaining which one (in Docker, the container stops instead of retrying every `CHECK_INTERVAL`).
+All values are checked at startup. If any are invalid, swurApp exits immediately with an error explaining which one (in Docker, the container stops).
 
 ## Limitations
 
 - Only works for the latest season. This should be fine unless a series comes out with a new season very quickly after an old one ends, or there is a midseason renewal.
-- If a monitored series does come out early, you won't get those episodes early. Just toggle them to "monitored" or manually download them to work around this.
-- `WAIT_UNTIL_END` relies on the runtime reported by Sonarr. If the episode has no runtime, the series runtime is used; if neither is known, the episode is monitored at its air date. Sonarr v4 or higher is required to use this flag.
-- A negative `EXTRA_DELAY` can monitor an episode before it airs (or before it finishes airing), which reintroduces the risk of grabbing fake pre-release files.
+- If a monitored episode does come out early, you won't download it early. Just kick off a search for the episode in Sonarr to work around this.
+- `WAIT_UNTIL_END` relies on the runtime reported by Sonarr. If the episode has no runtime, the series runtime is used. If neither is known, the episode is monitored at its air date. Sonarr v4 or higher is required to use this flag.
+- A negative `EXTRA_DELAY` can monitor episodes before they air (or before it finishes airing), which reintroduces the risk of grabbing fake pre-release files. But if multiple shows release episode before airdate, this may be worth setting.
 - The first time swurApp sees a series, unmonitored episodes that aired after the latest monitored one are treated as missed and monitored. So if you deleted the most recent episodes before then, they may be downloaded again once.
-- The first time swurApp sees a series with no aired episodes monitored, an episode that aired while swurApp wasn't running is treated as already aired and left unmonitored. Monitor it manually in Sonarr if you want it.
-- Episodes that air out of order are a problem: if E05 airs before E04, E04 counts as already handled and won't be monitored automatically.
 
 ## FAQ
 
